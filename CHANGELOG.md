@@ -24,3 +24,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Structured WatchEvent types: FileCreated, FileModified, FileDeleted, FileRenamed (P1-06)
 - Markdown file filtering: only .md/.markdown, ignores hidden/temp/swap/OS files (P1-06)
 - VaultWatcher API with start/stop/recv/try_recv for indexing pipeline integration (P1-06)
+- File tree sidebar with recursive vault listing and note selection (P1-01)
+- New note creation with modal dialog and validation (P1-01)
+- Note editor with auto-save (1s debounce) and loading/error states (P1-01)
+- Tauri IPC commands: set_vault_path, list_vault_files, create_note, rename_note, delete_note, move_note, read/write content (P1-01)
+- Svelte stores for vault state management with action helpers (P1-01)
