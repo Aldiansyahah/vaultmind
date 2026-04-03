@@ -1,7 +1,15 @@
 <script lang="ts">
   import FileTree from "./FileTree.svelte";
   import NewNoteButton from "./NewNoteButton.svelte";
+  import TagPanel from "./TagPanel.svelte";
   import { vaultEntries } from "$lib/stores/vault";
+
+  let activeTag = $state<string | null>(null);
+  let tags = $state<{ name: string; count: number }[]>([]);
+
+  function handleTagFilter(e: CustomEvent<string | null>) {
+    activeTag = e.detail;
+  }
 </script>
 
 <div class="sidebar">
@@ -11,6 +19,7 @@
   <div class="sidebar-content">
     <FileTree entries={$vaultEntries} />
   </div>
+  <TagPanel {tags} {activeTag} on:filter={handleTagFilter} />
 </div>
 
 <style>

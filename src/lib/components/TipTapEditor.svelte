@@ -6,6 +6,7 @@
   import { selectedNotePath, noteContent, isLoading, vaultEntries } from "$lib/stores/vault";
   import { saveNoteContent } from "$lib/stores/vault-actions";
   import WikilinkAutocomplete from "$lib/components/WikilinkAutocomplete.svelte";
+  import TagAutocomplete from "$lib/components/TagAutocomplete.svelte";
 
   let editor: Editor | null = null;
   let container: HTMLElement | null = null;
@@ -13,9 +14,12 @@
   let isInternalUpdate = false;
 
   let showAutocomplete = $state(false);
-  let wikilinkQuery = $state("");
+  let autocompleteType = $state<"wikilink" | "tag">("wikilink");
+  let autocompleteQuery = $state("");
   let selectedIndex = $state(0);
   let autocompletePosition = $state({ top: 0, left: 0 });
+
+  const existingTags = ["rust", "programming", "notes", "todo", "idea", "reference"];
 
   function getNoteTitles(): string[] {
     const titles: string[] = [];
@@ -33,10 +37,15 @@
     return titles;
   }
 
-  function getSuggestions(query: string): string[] {
+  function getWikilinkSuggestions(query: string): string[] {
     if (!query) return getNoteTitles().slice(0, 10);
     const titles = getNoteTitles();
     return titles.filter((t) => t.toLowerCase().includes(query.toLowerCase())).slice(0, 10);
+  }
+
+  function getTagSuggestions(query: string): string[] {
+    if (!query) return existingTags.slice(0, 10);
+    return existingTags.filter((t) => t.toLowerCase().includes(query.toLowerCase())).slice(0, 10);
   }
 
   function handleWikilinkSelect(target: string) {
@@ -64,10 +73,38 @@
     }
 
     showAutocomplete = false;
-    wikilinkQuery = "";
+    autocompleteQuery = "";
   }
 
-  function checkForWikilinkTrigger() {
+  function handleTagSelect(tag: string) {
+    if (!editor) return;
+    const sel = editor.state.selection;
+    const pos = sel.$from.pos;
+    const parentOffset = sel.$from.parentOffset;
+    const textBefore = sel.$from.parent.textBetween(
+      Math.max(0, parentOffset - 1),
+      parentOffset,
+      undefined,
+      " ",
+    );
+
+    const queryMatch = textBefore.match(/#([a-zA-Z0-9_-]*)$/);
+    if (queryMatch) {
+      const queryStart = pos - queryMatch[0].length;
+      const queryEnd = pos;
+      editor
+        .chain()
+        .focus()
+        .deleteRange({ from: queryStart, to: queryEnd })
+        .insertContent(`#${tag} `)
+        .run();
+    }
+
+    showAutocomplete = false;
+    autocompleteQuery = "";
+  }
+
+  function checkForAutocompleteTrigger() {
     if (!editor) return;
     const sel = editor.state.selection;
     const pos = sel.$from.pos;
@@ -79,25 +116,39 @@
       " ",
     );
 
-    const match = textBefore.match(/\[\[([^\]]*)$/);
-    if (match) {
-      wikilinkQuery = match[1];
-      const suggestions = getSuggestions(wikilinkQuery);
+    const wikilinkMatch = textBefore.match(/\[\[([^\]]*)$/);
+    if (wikilinkMatch) {
+      autocompleteQuery = wikilinkMatch[1];
+      autocompleteType = "wikilink";
+      const suggestions = getWikilinkSuggestions(autocompleteQuery);
       if (suggestions.length > 0) {
         showAutocomplete = true;
         selectedIndex = 0;
-
         const coords = editor.view.coordsAtPos(pos);
-        autocompletePosition = {
-          top: coords.bottom + 5,
-          left: coords.left,
-        };
+        autocompletePosition = { top: coords.bottom + 5, left: coords.left };
       } else {
         showAutocomplete = false;
       }
-    } else {
-      showAutocomplete = false;
+      return;
     }
+
+    const tagMatch = textBefore.match(/#([a-zA-Z0-9_-]*)$/);
+    if (tagMatch) {
+      autocompleteQuery = tagMatch[1];
+      autocompleteType = "tag";
+      const suggestions = getTagSuggestions(autocompleteQuery);
+      if (suggestions.length > 0) {
+        showAutocomplete = true;
+        selectedIndex = 0;
+        const coords = editor.view.coordsAtPos(pos);
+        autocompletePosition = { top: coords.bottom + 5, left: coords.left };
+      } else {
+        showAutocomplete = false;
+      }
+      return;
+    }
+
+    showAutocomplete = false;
   }
 
   onMount(() => {
@@ -105,20 +156,16 @@
       element: container!,
       extensions: [
         StarterKit.configure({
-          heading: {
-            levels: [1, 2, 3],
-          },
+          heading: { levels: [1, 2, 3] },
         }),
-        Link.configure({
-          openOnClick: false,
-        }),
+        Link.configure({ openOnClick: false }),
       ],
       content: $noteContent,
       onUpdate: () => {
         if (isInternalUpdate || !editor) return;
         const html = editor.getHTML();
         noteContent.set(html);
-        checkForWikilinkTrigger();
+        checkForAutocompleteTrigger();
         if (saveTimeout) clearTimeout(saveTimeout);
         saveTimeout = setTimeout(() => {
           const path = $selectedNotePath;
@@ -128,7 +175,7 @@
         }, 1000);
       },
       onSelectionUpdate: () => {
-        checkForWikilinkTrigger();
+        checkForAutocompleteTrigger();
       },
     });
 
@@ -167,14 +214,26 @@
       <p>Select a note from the file tree or create a new one.</p>
     </div>
   {/if}
-  <WikilinkAutocomplete
-    suggestions={getSuggestions(wikilinkQuery)}
-    {selectedIndex}
-    visible={showAutocomplete}
-    position={autocompletePosition}
-    on:select={(e) => handleWikilinkSelect(e.detail)}
-    on:close={() => (showAutocomplete = false)}
-  />
+
+  {#if autocompleteType === "wikilink"}
+    <WikilinkAutocomplete
+      suggestions={getWikilinkSuggestions(autocompleteQuery)}
+      {selectedIndex}
+      visible={showAutocomplete}
+      position={autocompletePosition}
+      on:select={(e) => handleWikilinkSelect(e.detail)}
+      on:close={() => (showAutocomplete = false)}
+    />
+  {:else}
+    <TagAutocomplete
+      tags={getTagSuggestions(autocompleteQuery)}
+      {selectedIndex}
+      visible={showAutocomplete}
+      position={autocompletePosition}
+      on:select={(e) => handleTagSelect(e.detail)}
+      on:close={() => (showAutocomplete = false)}
+    />
+  {/if}
 </div>
 
 <style>
