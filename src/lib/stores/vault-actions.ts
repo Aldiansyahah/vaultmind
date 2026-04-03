@@ -1,12 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import {
-  vaultPath,
-  vaultEntries,
-  selectedNotePath,
-  noteContent,
-  isLoading,
-  error,
-} from "$lib/stores/vault";
+import { vaultEntries, selectedNotePath, noteContent, isLoading, error } from "$lib/stores/vault";
 import type { VaultEntry } from "$lib/stores/vault";
 
 export async function loadVaultEntries(): Promise<void> {
