@@ -6,10 +6,13 @@ pub mod database;
 pub mod error;
 pub mod migrations;
 pub mod models;
+pub mod watcher;
 
 pub use database::Database;
 pub use error::{Result, StorageError};
 pub use models::{Note, NoteTag, Tag};
+pub use watcher::VaultWatcher;
+pub use watcher::WatchEvent;
 
 pub fn version() -> &'static str {
     env!("CARGO_PKG_VERSION")
