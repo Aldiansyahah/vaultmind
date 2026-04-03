@@ -3,13 +3,102 @@
   import { Editor } from "@tiptap/core";
   import StarterKit from "@tiptap/starter-kit";
   import Link from "@tiptap/extension-link";
-  import { selectedNotePath, noteContent, isLoading } from "$lib/stores/vault";
+  import { selectedNotePath, noteContent, isLoading, vaultEntries } from "$lib/stores/vault";
   import { saveNoteContent } from "$lib/stores/vault-actions";
+  import WikilinkAutocomplete from "$lib/components/WikilinkAutocomplete.svelte";
 
   let editor: Editor | null = null;
   let container: HTMLElement | null = null;
   let saveTimeout: ReturnType<typeof setTimeout> | null = null;
   let isInternalUpdate = false;
+
+  let showAutocomplete = $state(false);
+  let wikilinkQuery = $state("");
+  let selectedIndex = $state(0);
+  let autocompletePosition = $state({ top: 0, left: 0 });
+
+  function getNoteTitles(): string[] {
+    const titles: string[] = [];
+    function extractTitles(entries: typeof $vaultEntries) {
+      for (const entry of entries) {
+        if (!entry.is_directory) {
+          titles.push(entry.name.replace(/\.md$/, ""));
+        }
+        if (entry.children) {
+          extractTitles(entry.children);
+        }
+      }
+    }
+    extractTitles($vaultEntries);
+    return titles;
+  }
+
+  function getSuggestions(query: string): string[] {
+    if (!query) return getNoteTitles().slice(0, 10);
+    const titles = getNoteTitles();
+    return titles.filter((t) => t.toLowerCase().includes(query.toLowerCase())).slice(0, 10);
+  }
+
+  function handleWikilinkSelect(target: string) {
+    if (!editor) return;
+    const sel = editor.state.selection;
+    const pos = sel.$from.pos;
+    const parentOffset = sel.$from.parentOffset;
+    const textBefore = sel.$from.parent.textBetween(
+      Math.max(0, parentOffset - 2),
+      parentOffset,
+      undefined,
+      " ",
+    );
+
+    const queryMatch = textBefore.match(/\[\[([^\]]*)$/);
+    if (queryMatch) {
+      const queryStart = pos - queryMatch[0].length;
+      const queryEnd = pos;
+      editor
+        .chain()
+        .focus()
+        .deleteRange({ from: queryStart, to: queryEnd })
+        .insertContent(`[[${target}]] `)
+        .run();
+    }
+
+    showAutocomplete = false;
+    wikilinkQuery = "";
+  }
+
+  function checkForWikilinkTrigger() {
+    if (!editor) return;
+    const sel = editor.state.selection;
+    const pos = sel.$from.pos;
+    const parentOffset = sel.$from.parentOffset;
+    const textBefore = sel.$from.parent.textBetween(
+      Math.max(0, parentOffset - 50),
+      parentOffset,
+      undefined,
+      " ",
+    );
+
+    const match = textBefore.match(/\[\[([^\]]*)$/);
+    if (match) {
+      wikilinkQuery = match[1];
+      const suggestions = getSuggestions(wikilinkQuery);
+      if (suggestions.length > 0) {
+        showAutocomplete = true;
+        selectedIndex = 0;
+
+        const coords = editor.view.coordsAtPos(pos);
+        autocompletePosition = {
+          top: coords.bottom + 5,
+          left: coords.left,
+        };
+      } else {
+        showAutocomplete = false;
+      }
+    } else {
+      showAutocomplete = false;
+    }
+  }
 
   onMount(() => {
     editor = new Editor({
@@ -29,6 +118,7 @@
         if (isInternalUpdate || !editor) return;
         const html = editor.getHTML();
         noteContent.set(html);
+        checkForWikilinkTrigger();
         if (saveTimeout) clearTimeout(saveTimeout);
         saveTimeout = setTimeout(() => {
           const path = $selectedNotePath;
@@ -36,6 +126,9 @@
             saveNoteContent(path, html);
           }
         }, 1000);
+      },
+      onSelectionUpdate: () => {
+        checkForWikilinkTrigger();
       },
     });
 
@@ -74,6 +167,14 @@
       <p>Select a note from the file tree or create a new one.</p>
     </div>
   {/if}
+  <WikilinkAutocomplete
+    suggestions={getSuggestions(wikilinkQuery)}
+    {selectedIndex}
+    visible={showAutocomplete}
+    position={autocompletePosition}
+    on:select={(e) => handleWikilinkSelect(e.detail)}
+    on:close={() => (showAutocomplete = false)}
+  />
 </div>
 
 <style>
@@ -165,6 +266,17 @@
   .editor-wrapper .ProseMirror a {
     color: #2e86c1;
     text-decoration: underline;
+  }
+
+  .editor-wrapper .ProseMirror .wikilink {
+    color: #2e86c1;
+    cursor: pointer;
+    text-decoration: underline;
+    text-decoration-style: dashed;
+  }
+
+  .editor-wrapper .ProseMirror .wikilink:hover {
+    color: #2471a3;
   }
 
   .placeholder {
