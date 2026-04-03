@@ -5,6 +5,15 @@
 //! This is the Tauri application entry point that bridges the Rust backend
 //! (storage, indexing, graph, retrieval, agent) with the Svelte frontend.
 
+use std::path::PathBuf;
+use std::sync::Mutex;
+
+use core_storage::VaultEntry;
+
+struct AppState {
+    vault_path: Mutex<Option<PathBuf>>,
+}
+
 /// Tauri IPC command: Get application version
 #[tauri::command]
 fn get_version() -> String {
@@ -27,11 +36,165 @@ fn health_check() -> serde_json::Value {
     })
 }
 
+/// Tauri IPC command: Set the vault path for file operations
+#[tauri::command]
+fn set_vault_path(path: String, state: tauri::State<AppState>) -> Result<(), String> {
+    let vault_path = PathBuf::from(&path);
+    if !vault_path.exists() {
+        return Err(format!("Path does not exist: {path}"));
+    }
+    if !vault_path.is_dir() {
+        return Err(format!("Path is not a directory: {path}"));
+    }
+    *state.vault_path.lock().map_err(|e| e.to_string())? = Some(vault_path);
+    Ok(())
+}
+
+/// Tauri IPC command: Get the current vault path
+#[tauri::command]
+fn get_vault_path(state: tauri::State<AppState>) -> Option<String> {
+    state
+        .vault_path
+        .lock()
+        .ok()
+        .and_then(|p| p.clone())
+        .and_then(|p| p.to_str().map(String::from))
+}
+
+/// Tauri IPC command: List all files and directories in the vault
+#[tauri::command]
+fn list_vault_files(state: tauri::State<AppState>) -> Result<Vec<VaultEntry>, String> {
+    let vault_path = state
+        .vault_path
+        .lock()
+        .map_err(|e| e.to_string())?
+        .clone()
+        .ok_or("Vault path not set")?;
+
+    core_storage::list_vault_files(&vault_path).map_err(|e| e.to_string())
+}
+
+/// Tauri IPC command: Create a new note file
+#[tauri::command]
+fn create_note(
+    relative_path: String,
+    content: String,
+    state: tauri::State<AppState>,
+) -> Result<String, String> {
+    let vault_path = state
+        .vault_path
+        .lock()
+        .map_err(|e| e.to_string())?
+        .clone()
+        .ok_or("Vault path not set")?;
+
+    let full_path = core_storage::create_note(&vault_path, &relative_path, &content)
+        .map_err(|e| e.to_string())?;
+
+    Ok(full_path.to_string_lossy().to_string())
+}
+
+/// Tauri IPC command: Rename a note or directory
+#[tauri::command]
+fn rename_note(
+    old_path: String,
+    new_path: String,
+    state: tauri::State<AppState>,
+) -> Result<(), String> {
+    let vault_path = state
+        .vault_path
+        .lock()
+        .map_err(|e| e.to_string())?
+        .clone()
+        .ok_or("Vault path not set")?;
+
+    core_storage::rename_note(&vault_path, &old_path, &new_path).map_err(|e| e.to_string())
+}
+
+/// Tauri IPC command: Delete a note or directory
+#[tauri::command]
+fn delete_note(relative_path: String, state: tauri::State<AppState>) -> Result<(), String> {
+    let vault_path = state
+        .vault_path
+        .lock()
+        .map_err(|e| e.to_string())?
+        .clone()
+        .ok_or("Vault path not set")?;
+
+    core_storage::delete_note(&vault_path, &relative_path).map_err(|e| e.to_string())
+}
+
+/// Tauri IPC command: Move a note or directory
+#[tauri::command]
+fn move_note(
+    old_path: String,
+    new_path: String,
+    state: tauri::State<AppState>,
+) -> Result<(), String> {
+    let vault_path = state
+        .vault_path
+        .lock()
+        .map_err(|e| e.to_string())?
+        .clone()
+        .ok_or("Vault path not set")?;
+
+    core_storage::move_note(&vault_path, &old_path, &new_path).map_err(|e| e.to_string())
+}
+
+/// Tauri IPC command: Read note content
+#[tauri::command]
+fn read_note_content(
+    relative_path: String,
+    state: tauri::State<AppState>,
+) -> Result<String, String> {
+    let vault_path = state
+        .vault_path
+        .lock()
+        .map_err(|e| e.to_string())?
+        .clone()
+        .ok_or("Vault path not set")?;
+
+    core_storage::read_note_content(&vault_path, &relative_path).map_err(|e| e.to_string())
+}
+
+/// Tauri IPC command: Write note content
+#[tauri::command]
+fn write_note_content(
+    relative_path: String,
+    content: String,
+    state: tauri::State<AppState>,
+) -> Result<(), String> {
+    let vault_path = state
+        .vault_path
+        .lock()
+        .map_err(|e| e.to_string())?
+        .clone()
+        .ok_or("Vault path not set")?;
+
+    core_storage::write_note_content(&vault_path, &relative_path, &content)
+        .map_err(|e| e.to_string())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
-        .invoke_handler(tauri::generate_handler![get_version, health_check])
+        .manage(AppState {
+            vault_path: Mutex::new(None),
+        })
+        .invoke_handler(tauri::generate_handler![
+            get_version,
+            health_check,
+            set_vault_path,
+            get_vault_path,
+            list_vault_files,
+            create_note,
+            rename_note,
+            delete_note,
+            move_note,
+            read_note_content,
+            write_note_content,
+        ])
         .run(tauri::generate_context!())
         .expect("error while running VaultMind");
 }
