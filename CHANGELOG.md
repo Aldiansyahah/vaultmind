@@ -1,0 +1,17 @@
+# Changelog
+
+All notable changes to VaultMind will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+### Added
+- Initial project scaffold with Tauri 2.0 + Svelte 5
+- Rust workspace with 5 crates: core-storage, indexer, graph-engine, retriever, agent-runtime
+- CI/CD pipelines (lint, test, build, release)
+- Contributing guidelines for humans and AI agents
+- Issue templates and PR template
+- Development setup script
+- Sample vault for development

@@ -1,0 +1,16 @@
+[package]
+name = "retriever"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Hybrid search, re-ranking, and context assembly"
+
+[dependencies]
+core-storage = { path = "../core-storage" }
+graph-engine = { path = "../graph-engine" }
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+tantivy.workspace = true
