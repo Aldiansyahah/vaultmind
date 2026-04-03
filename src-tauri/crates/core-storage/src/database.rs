@@ -204,6 +204,87 @@ impl Database {
             .collect::<std::result::Result<Vec<_>, _>>()?;
         Ok(notes)
     }
+
+    /// Syncs tags extracted from note content to the database.
+    ///
+    /// Removes tags that are no longer in the content and adds new ones.
+    /// This should be called whenever a note's content is saved.
+    pub fn sync_tags_for_note(&self, note_id: i64, tags: &[String]) -> Result<()> {
+        let current_tags: Vec<(i64, String)> = {
+            let mut stmt = self.conn.prepare("SELECT t.id, t.name FROM tags t INNER JOIN note_tags nt ON t.id = nt.tag_id WHERE nt.note_id = ?1")?;
+            let rows = stmt
+                .query_map([note_id], |row| Ok((row.get(0)?, row.get(1)?)))?
+                .collect::<std::result::Result<Vec<_>, _>>()?;
+            rows
+        };
+
+        let new_tag_set: std::collections::HashSet<&str> =
+            tags.iter().map(|s| s.as_str()).collect();
+        let current_tag_map: std::collections::HashMap<String, i64> = current_tags
+            .iter()
+            .map(|(id, name)| (name.clone(), *id))
+            .collect();
+
+        for (tag_id, tag_name) in &current_tags {
+            if !new_tag_set.contains(tag_name.as_str()) {
+                self.conn.execute(
+                    "DELETE FROM note_tags WHERE note_id = ?1 AND tag_id = ?2",
+                    (note_id, tag_id),
+                )?;
+            }
+        }
+
+        for tag_name in tags {
+            if let Some(&tag_id) = current_tag_map.get(tag_name) {
+                self.conn.execute(
+                    "INSERT OR IGNORE INTO note_tags (note_id, tag_id) VALUES (?1, ?2)",
+                    (note_id, tag_id),
+                )?;
+            } else {
+                let tag_id: i64 = match self.conn.query_row(
+                    "SELECT id FROM tags WHERE name = ?1",
+                    [tag_name],
+                    |row| row.get(0),
+                ) {
+                    Ok(id) => id,
+                    Err(_) => {
+                        self.conn
+                            .execute("INSERT OR IGNORE INTO tags (name) VALUES (?1)", [tag_name])?;
+                        self.conn.query_row(
+                            "SELECT id FROM tags WHERE name = ?1",
+                            [tag_name],
+                            |row| row.get(0),
+                        )?
+                    }
+                };
+                self.conn.execute(
+                    "INSERT OR IGNORE INTO note_tags (note_id, tag_id) VALUES (?1, ?2)",
+                    (note_id, tag_id),
+                )?;
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Lists all unique tags across all notes, sorted by usage count.
+    pub fn list_all_tags_with_counts(&self) -> Result<Vec<(Tag, i64)>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT t.id, t.name, COUNT(nt.note_id) as usage_count FROM tags t LEFT JOIN note_tags nt ON t.id = nt.tag_id GROUP BY t.id ORDER BY usage_count DESC, t.name"
+        )?;
+        let results = stmt
+            .query_map([], |row| {
+                Ok((
+                    Tag {
+                        id: Some(row.get(0)?),
+                        name: row.get(1)?,
+                    },
+                    row.get(2)?,
+                ))
+            })?
+            .collect::<std::result::Result<Vec<_>, _>>()?;
+        Ok(results)
+    }
 }
 
 #[cfg(test)]
@@ -454,5 +535,87 @@ mod tests {
 
         let tags = db.get_tags_for_note(note_id).expect("Failed to get tags");
         assert_eq!(tags.len(), 1);
+    }
+
+    #[test]
+    fn test_sync_tags_for_note_adds_new_tags() {
+        let db = create_test_db();
+        let hash = hash_content("content");
+        let note_id = db
+            .create_note("test.md", "Test", &hash)
+            .expect("Failed to create note");
+
+        db.sync_tags_for_note(note_id, &["rust".to_string(), "programming".to_string()])
+            .expect("Failed to sync tags");
+
+        let tags = db.get_tags_for_note(note_id).expect("Failed to get tags");
+        assert_eq!(tags.len(), 2);
+        let names: Vec<&str> = tags.iter().map(|t| t.name.as_str()).collect();
+        assert!(names.contains(&"rust"));
+        assert!(names.contains(&"programming"));
+    }
+
+    #[test]
+    fn test_sync_tags_for_note_removes_old_tags() {
+        let db = create_test_db();
+        let hash = hash_content("content");
+        let note_id = db
+            .create_note("test.md", "Test", &hash)
+            .expect("Failed to create note");
+
+        db.sync_tags_for_note(note_id, &["rust".to_string(), "old".to_string()])
+            .expect("Failed to sync tags");
+
+        db.sync_tags_for_note(note_id, &["rust".to_string(), "new".to_string()])
+            .expect("Failed to sync tags");
+
+        let tags = db.get_tags_for_note(note_id).expect("Failed to get tags");
+        assert_eq!(tags.len(), 2);
+        let names: Vec<&str> = tags.iter().map(|t| t.name.as_str()).collect();
+        assert!(names.contains(&"rust"));
+        assert!(names.contains(&"new"));
+        assert!(!names.contains(&"old"));
+    }
+
+    #[test]
+    fn test_sync_tags_for_note_empty() {
+        let db = create_test_db();
+        let hash = hash_content("content");
+        let note_id = db
+            .create_note("test.md", "Test", &hash)
+            .expect("Failed to create note");
+
+        db.sync_tags_for_note(note_id, &["rust".to_string()])
+            .expect("Failed to sync tags");
+
+        db.sync_tags_for_note(note_id, &[])
+            .expect("Failed to sync tags");
+
+        let tags = db.get_tags_for_note(note_id).expect("Failed to get tags");
+        assert!(tags.is_empty());
+    }
+
+    #[test]
+    fn test_list_all_tags_with_counts() {
+        let db = create_test_db();
+        let hash = hash_content("content");
+        let note_id1 = db
+            .create_note("a.md", "Note A", &hash)
+            .expect("Failed to create note");
+        let note_id2 = db
+            .create_note("b.md", "Note B", &hash)
+            .expect("Failed to create note");
+
+        db.sync_tags_for_note(note_id1, &["rust".to_string()])
+            .expect("Failed to sync tags");
+        db.sync_tags_for_note(note_id2, &["rust".to_string(), "web".to_string()])
+            .expect("Failed to sync tags");
+
+        let results = db.list_all_tags_with_counts().expect("Failed to list tags");
+        assert_eq!(results.len(), 2);
+        assert_eq!(results[0].0.name, "rust");
+        assert_eq!(results[0].1, 2);
+        assert_eq!(results[1].0.name, "web");
+        assert_eq!(results[1].1, 1);
     }
 }
