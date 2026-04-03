@@ -8,10 +8,11 @@
 use std::path::PathBuf;
 use std::sync::Mutex;
 
-use core_storage::VaultEntry;
+use core_storage::{Database, VaultEntry};
 
 struct AppState {
     vault_path: Mutex<Option<PathBuf>>,
+    db: Mutex<Option<Database>>,
 }
 
 /// Tauri IPC command: Get application version
@@ -187,12 +188,65 @@ fn extract_tags_from_content(content: String) -> Vec<String> {
     core_storage::extract_tags(&content)
 }
 
+/// Tauri IPC command: Sync tags from content to database for a note
+#[tauri::command]
+fn sync_note_tags(
+    note_path: String,
+    tags: Vec<String>,
+    state: tauri::State<AppState>,
+) -> Result<(), String> {
+    let db = state
+        .db
+        .lock()
+        .map_err(|e| e.to_string())?
+        .as_ref()
+        .ok_or("Database not initialized")?;
+
+    let note = db
+        .get_note_by_path(&note_path)
+        .map_err(|e| e.to_string())?
+        .ok_or_else(|| format!("Note not found: {note_path}"))?;
+
+    db.sync_tags_for_note(note.id.unwrap(), &tags)
+        .map_err(|e| e.to_string())
+}
+
+/// Tauri IPC command: Get all tags with their usage counts
+#[tauri::command]
+fn get_all_tags(state: tauri::State<AppState>) -> Result<Vec<(core_storage::Tag, i64)>, String> {
+    let db = state
+        .db
+        .lock()
+        .map_err(|e| e.to_string())?
+        .as_ref()
+        .ok_or("Database not initialized")?;
+
+    db.list_all_tags_with_counts().map_err(|e| e.to_string())
+}
+
+/// Tauri IPC command: Get notes for a specific tag
+#[tauri::command]
+fn get_notes_for_tag(
+    tag_id: i64,
+    state: tauri::State<AppState>,
+) -> Result<Vec<core_storage::Note>, String> {
+    let db = state
+        .db
+        .lock()
+        .map_err(|e| e.to_string())?
+        .as_ref()
+        .ok_or("Database not initialized")?;
+
+    db.get_notes_for_tag(tag_id).map_err(|e| e.to_string())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .manage(AppState {
             vault_path: Mutex::new(None),
+            db: Mutex::new(None),
         })
         .invoke_handler(tauri::generate_handler![
             get_version,
@@ -208,6 +262,9 @@ pub fn run() {
             write_note_content,
             extract_wikilinks_from_content,
             extract_tags_from_content,
+            sync_note_tags,
+            get_all_tags,
+            get_notes_for_tag,
         ])
         .run(tauri::generate_context!())
         .expect("error while running VaultMind");
