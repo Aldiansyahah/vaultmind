@@ -40,3 +40,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Note editor with auto-save (1s debounce) and loading/error states (P1-01)
 - Tauri IPC commands: set_vault_path, list_vault_files, create_note, rename_note, delete_note, move_note, read/write content (P1-01)
 - Svelte stores for vault state management with action helpers (P1-01)
+- Tantivy full-text search index with BM25 scoring (P1-07)
+- Search API: upsert, delete, query with title boost (3x) and snippet generation (P1-07)
+- Persisted index that survives app restarts (P1-07)
