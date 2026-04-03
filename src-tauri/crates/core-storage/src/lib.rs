@@ -4,12 +4,17 @@
 
 pub mod database;
 pub mod error;
+pub mod file_ops;
 pub mod migrations;
 pub mod models;
 pub mod watcher;
 
 pub use database::Database;
 pub use error::{Result, StorageError};
+pub use file_ops::{
+    create_note, delete_note, list_vault_files, move_note, read_note_content, rename_note,
+    write_note_content, VaultEntry,
+};
 pub use models::{Note, NoteTag, Tag};
 pub use watcher::VaultWatcher;
 pub use watcher::WatchEvent;
