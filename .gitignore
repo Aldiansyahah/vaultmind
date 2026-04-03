@@ -1,0 +1,45 @@
+# Rust
+/target/
+src-tauri/target/
+**/*.rs.bk
+Cargo.lock
+
+# Node
+node_modules/
+dist/
+.output/
+.svelte-kit/
+
+# Tauri
+src-tauri/gen/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ONNX models (tracked via Git LFS, but ignore local downloads)
+models/*.onnx
+!models/.gitkeep
+
+# Test artifacts
+tests/fixtures/temp/
+tests/fixtures/*.db
+coverage/
+lcov.info
+
+# Build artifacts
+*.dmg
+*.deb
+*.msi
+*.AppImage
+*.app

@@ -28,7 +28,7 @@ Thank you for your interest in contributing to VaultMind! This guide covers ever
 
 ```bash
 # 1. Fork and clone
-git clone https://github.com/YOUR_USERNAME/vaultmind.git
+git clone https://github.com/Aldiansyahahah/vaultmind.git
 cd vaultmind
 
 # 2. Run setup script (installs deps, pre-commit hooks, downloads ONNX model)
@@ -283,4 +283,4 @@ Each crate has a clear public interface defined as Rust traits. See `docs/` for 
 
 ## Questions?
 
-Open a [Discussion](https://github.com/YOUR_USERNAME/vaultmind/discussions) or reach out via Issues. We're happy to help you get started.
+Open a [Discussion](https://github.com/Aldiansyahahah/vaultmind/discussions) or reach out via Issues. We're happy to help you get started.

@@ -7,12 +7,12 @@
     "dev": "vite dev",
     "build": "vite build",
     "preview": "vite preview",
+    "tauri": "tauri",
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "eslint . --ext .ts,.svelte",
     "format": "prettier --write .",
-    "format:check": "prettier --check .",
-    "check": "svelte-check --tsconfig ./tsconfig.json"
+    "format:check": "prettier --check ."
   },
   "dependencies": {
     "@tauri-apps/api": "^2.0.0",
@@ -20,6 +20,7 @@
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^4.0.0",
+    "@tauri-apps/cli": "^2.0.0",
     "@tsconfig/svelte": "^5.0.0",
     "eslint": "^9.0.0",
     "prettier": "^3.3.0",

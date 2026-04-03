@@ -5,7 +5,7 @@
 VaultMind is a desktop app built with [Tauri 2.0](https://v2.tauri.app/) where Retrieval-Augmented Generation (RAG) is a first-class architectural concern — not a plugin afterthought. Every note you create is automatically parsed, chunked, embedded, and connected in a knowledge graph for high-quality AI-powered retrieval.
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![CI](https://img.shields.io/github/actions/workflow/status/YOUR_USERNAME/vaultmind/ci.yml?branch=develop&label=CI)
+![CI](https://img.shields.io/github/actions/workflow/status/Aldiansyahahah/vaultmind/ci.yml?branch=develop&label=CI)
 ![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Linux%20%7C%20Windows-lightgrey)
 
 ---
@@ -54,7 +54,7 @@ VaultMind is a desktop app built with [Tauri 2.0](https://v2.tauri.app/) where R
 
 ```bash
 # Clone the repository
-git clone https://github.com/YOUR_USERNAME/vaultmind.git
+git clone https://github.com/Aldiansyahahah/vaultmind.git
 cd vaultmind
 
 # Run the setup script (installs dependencies, hooks, etc.)
