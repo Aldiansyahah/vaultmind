@@ -20,3 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Tags table with CRUD operations (P1-05)
 - Note-tags junction table with association operations (P1-05)
 - Custom error types with thiserror-style error handling (P1-05)
+- File system watcher with 300ms debouncing for vault directory (P1-06)
+- Structured WatchEvent types: FileCreated, FileModified, FileDeleted, FileRenamed (P1-06)
+- Markdown file filtering: only .md/.markdown, ignores hidden/temp/swap/OS files (P1-06)
+- VaultWatcher API with start/stop/recv/try_recv for indexing pipeline integration (P1-06)
