@@ -15,3 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Issue templates and PR template
 - Development setup script
 - Sample vault for development
+- SQLite database initialization and migration system (P1-05)
+- Notes table with CRUD operations and content hash for change detection (P1-05)
+- Tags table with CRUD operations (P1-05)
+- Note-tags junction table with association operations (P1-05)
+- Custom error types with thiserror-style error handling (P1-05)
