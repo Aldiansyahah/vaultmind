@@ -175,6 +175,18 @@ fn write_note_content(
         .map_err(|e| e.to_string())
 }
 
+/// Tauri IPC command: Extract wikilinks from note content
+#[tauri::command]
+fn extract_wikilinks_from_content(content: String) -> Vec<String> {
+    core_storage::extract_wikilinks(&content)
+}
+
+/// Tauri IPC command: Extract tags from note content
+#[tauri::command]
+fn extract_tags_from_content(content: String) -> Vec<String> {
+    core_storage::extract_tags(&content)
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -194,6 +206,8 @@ pub fn run() {
             move_note,
             read_note_content,
             write_note_content,
+            extract_wikilinks_from_content,
+            extract_tags_from_content,
         ])
         .run(tauri::generate_context!())
         .expect("error while running VaultMind");
