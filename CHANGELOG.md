@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+
 - Initial project scaffold with Tauri 2.0 + Svelte 5
 - Rust workspace with 5 crates: core-storage, indexer, graph-engine, retriever, agent-runtime
 - CI/CD pipelines (lint, test, build, release)
@@ -24,6 +25,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Structured WatchEvent types: FileCreated, FileModified, FileDeleted, FileRenamed (P1-06)
 - Markdown file filtering: only .md/.markdown, ignores hidden/temp/swap/OS files (P1-06)
 - VaultWatcher API with start/stop/recv/try_recv for indexing pipeline integration (P1-06)
+- TipTap WYSIWYG markdown editor with StarterKit (headings, bold, italic, code, lists, blockquotes, links) (P1-02)
+- Auto-save with 1s debounce and bidirectional content sync (P1-02)
 - File tree sidebar with recursive vault listing and note selection (P1-01)
 - New note creation with modal dialog and validation (P1-01)
 - Note editor with auto-save (1s debounce) and loading/error states (P1-01)
