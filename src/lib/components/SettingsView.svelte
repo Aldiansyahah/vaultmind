@@ -1,7 +1,7 @@
 <script lang="ts">
   import { settings } from "$lib/stores/settings";
   import { createEventDispatcher } from "svelte";
-  import { set_vault_path } from "$lib/stores/vault-actions";
+  import { set_vault_path, loadVaultEntries } from "$lib/stores/vault-actions";
   import { open } from "@tauri-apps/plugin-dialog";
 
   const dispatch = createEventDispatcher();
@@ -26,6 +26,7 @@
     try {
       await set_vault_path(localVaultPath.trim());
       settings.update((s) => ({ ...s, vaultPath: localVaultPath.trim() }));
+      await loadVaultEntries();
       saveStatus = "saved";
       setTimeout(() => (saveStatus = "idle"), 2000);
     } catch {

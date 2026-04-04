@@ -52,8 +52,8 @@
     --text-secondary: #787774;
     --text-tertiary: #a8a69f;
     --border-color: #e3ddd3;
-    --accent-color: #2e86c1;
-    --accent-hover: #2471a3;
+    --accent-color: #45413c;
+    --accent-hover: #37352f;
     --success-color: #4a9e6e;
     --success-bg: #e8f5e8;
     --error-color: #cc5544;
