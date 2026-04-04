@@ -1,14 +1,22 @@
 //! # agent-runtime
 //!
 //! LLM integration with tool-calling for knowledge base manipulation.
-//! Supports: search, create, edit, link, suggest, split notes.
+//! Multi-agent orchestration with heartbeats, tasks, and org hierarchy.
 
 pub mod agent;
 pub mod client;
+pub mod heartbeat;
+pub mod orchestrator;
+pub mod registry;
+pub mod tasks;
 pub mod tools;
 
 pub use agent::{Agent, AgentResponse, ToolExecutor};
 pub use client::{LlmClient, LlmConfig, Message};
+pub use heartbeat::{AgentState, AgentStatusInfo, HeartbeatMonitor};
+pub use orchestrator::{AgentOrchestrator, DashboardData, TaskInfo};
+pub use registry::{AgentDef, AgentRegistry, OrgNode};
+pub use tasks::{Task, TaskQueue, TaskSchedule, TaskStatus};
 pub use tools::get_tool_definitions;
 
 pub fn version() -> &'static str {
