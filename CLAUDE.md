@@ -13,7 +13,7 @@ VaultMind is a RAG-optimized personal knowledge management system built with Tau
 ## Current Status
 
 **Phase 0: Complete** — Repository, CI/CD, project structure, branch protection.
-**Phase 1: Starting** — Core Note-Taking MVP.
+**Phase 1: Near Complete** — Core Note-Taking MVP. P1-01 through P1-09 done. P1-10 (cross-platform testing) remaining.
 
 ## Architecture
 
@@ -90,7 +90,7 @@ src/                        # Svelte 5 frontend
 
 Complete these tasks in order. Each task should be a separate branch and PR.
 
-#### P1-05: SQLite Database Setup (START HERE)
+#### P1-05: SQLite Database Setup [DONE]
 
 **Crate:** `core-storage`
 **What to build:**
@@ -104,7 +104,7 @@ Complete these tasks in order. Each task should be a separate branch and PR.
 - Database created automatically on first run
 - Migration system supports schema evolution
 
-#### P1-06: File System Watcher
+#### P1-06: File System Watcher [DONE]
 
 **Crate:** `core-storage`
 **What to build:**
@@ -118,7 +118,7 @@ Complete these tasks in order. Each task should be a separate branch and PR.
 - Only .md files trigger events
 - Debouncing prevents duplicate events from editor save
 
-#### P1-01: File Tree Sidebar
+#### P1-01: File Tree Sidebar [DONE]
 
 **Module:** Frontend (`src/lib/components/`)
 **What to build:**
@@ -138,7 +138,7 @@ Complete these tasks in order. Each task should be a separate branch and PR.
 - File tree reflects actual disk state
 - Changes on disk (from watcher) update tree automatically
 
-#### P1-02: TipTap Markdown Editor
+#### P1-02: TipTap Markdown Editor [DONE]
 
 **Module:** Frontend (`src/lib/components/`)
 **What to build:**
@@ -152,7 +152,7 @@ Complete these tasks in order. Each task should be a separate branch and PR.
 - Edit in editor, open file in external editor → content matches
 - Edit file externally, editor updates within 1 second
 
-#### P1-03: Wikilink Support
+#### P1-03: Wikilink Support [DONE]
 
 **Module:** Frontend (editor extension) + Backend (parser)
 **What to build:**
@@ -166,7 +166,7 @@ Complete these tasks in order. Each task should be a separate branch and PR.
 - Rendered wikilinks are clickable and navigate to target
 - Wikilinks in .md files are standard `[[note-name]]` syntax
 
-#### P1-04: Tag Support
+#### P1-04: Tag Support [DONE]
 
 **Module:** Frontend + Backend
 **What to build:**
@@ -180,7 +180,7 @@ Complete these tasks in order. Each task should be a separate branch and PR.
 - Autocomplete shows existing tags
 - Can filter/search notes by tag
 
-#### P1-07: Tantivy Full-Text Search
+#### P1-07: Tantivy Full-Text Search [DONE]
 
 **Crate:** `retriever`
 **What to build:**
@@ -194,7 +194,7 @@ Complete these tasks in order. Each task should be a separate branch and PR.
 - Results include highlighted snippet showing match context
 - Index survives app restart (persisted to disk)
 
-#### P1-08: Search UI
+#### P1-08: Search UI [DONE]
 
 **Module:** Frontend
 **What to build:**
@@ -207,7 +207,7 @@ Complete these tasks in order. Each task should be a separate branch and PR.
 - Search results appear within 300ms of typing
 - Keyboard navigation (arrow keys + Enter)
 
-#### P1-09: Settings Panel
+#### P1-09: Settings Panel [DONE]
 
 **Module:** Frontend + Backend
 **What to build:**
@@ -219,7 +219,7 @@ Complete these tasks in order. Each task should be a separate branch and PR.
 - Changing vault path triggers reindex
 - Theme switch works without restart
 
-#### P1-10: Cross-Platform Testing
+#### P1-10: Cross-Platform Testing [TODO]
 
 **What to do:**
 

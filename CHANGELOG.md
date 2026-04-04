@@ -7,8 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Fix 4 E0716 temporary value lifetime bugs in lib.rs (MutexGuard dropped too early)
+- Initialize SQLite DB and Tantivy search index in set_vault_path (were never created)
+- Fix file watcher channel wiring: debounced events now reach event_rx
+- Add path traversal validation to all file operations (security fix)
+- Save Markdown to disk instead of HTML from TipTap editor
+- Fix selectedNotePath store access crash in vault-actions.ts (use get() instead of calling)
+- Fix UTF-8 panic in search snippet generation with char boundary checks
+- Fix tag regex to skip markdown headings and fenced code blocks
+- Fix rename dropping directory path prefix
+- Fix Vite $lib path alias resolution
+- Fix Svelte resolving to server bundle (add browser condition)
+- Fix TipTap editor not mounting when note is selected ($effect instead of onMount)
+- Fix markdown/HTML content flow between editor and disk
+- Auto-open note after creation
+- Load vault entries after setting vault path
+- Fix CI workflow: correct dtolnay/rust-toolchain action name
+
 ### Added
 
+- Native folder picker dialog for vault path selection (tauri-plugin-dialog)
+- Right-click context menu on file tree (Rename, Delete)
+- Inline rename via double-click on notes
+- Delete confirmation dialog
+- VaultMind branding in sidebar header
+- Warm cream/beige light theme (Cabinet-inspired)
+- Dark brown accent buttons in light mode
+- Editor header with note title and path
+- Placeholder Tauri app icons
 - Initial project scaffold with Tauri 2.0 + Svelte 5
 - Rust workspace with 5 crates: core-storage, indexer, graph-engine, retriever, agent-runtime
 - CI/CD pipelines (lint, test, build, release)
