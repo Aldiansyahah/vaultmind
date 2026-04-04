@@ -46,20 +46,20 @@
 
 <style>
   :global([data-theme="light"]) {
-    --bg-primary: #ffffff;
-    --bg-secondary: #f5f5f5;
-    --text-primary: #1a1a1a;
-    --text-secondary: #666666;
-    --text-tertiary: #999999;
-    --border-color: #e0e0e0;
+    --bg-primary: #faf8f5;
+    --bg-secondary: #f0ece4;
+    --text-primary: #37352f;
+    --text-secondary: #787774;
+    --text-tertiary: #a8a69f;
+    --border-color: #e3ddd3;
     --accent-color: #2e86c1;
     --accent-hover: #2471a3;
-    --success-color: #27ae60;
-    --success-bg: #e8f8e8;
-    --error-color: #e74c3c;
-    --error-bg: #fde8e8;
-    --overlay-bg: rgba(0, 0, 0, 0.4);
-    --hover-bg: #eaeaea;
+    --success-color: #4a9e6e;
+    --success-bg: #e8f5e8;
+    --error-color: #cc5544;
+    --error-bg: #fce8e4;
+    --overlay-bg: rgba(0, 0, 0, 0.3);
+    --hover-bg: #ebe7df;
   }
 
   :global([data-theme="dark"]) {

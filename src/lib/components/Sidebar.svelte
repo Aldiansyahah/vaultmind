@@ -16,12 +16,17 @@
 </script>
 
 <div class="sidebar">
-  <div class="sidebar-header">
-    <NewNoteButton />
+  <div class="sidebar-brand">
+    <span class="brand-icon">V</span>
+    <span class="brand-name">VaultMind</span>
     <button class="settings-btn" onclick={() => dispatch("open-settings")} title="Settings"
-      >⚙️</button
+      >⚙</button
     >
   </div>
+  <div class="sidebar-actions">
+    <NewNoteButton />
+  </div>
+  <div class="sidebar-section-label">Notes</div>
   <div class="sidebar-content">
     <FileTree entries={$vaultEntries} />
   </div>
@@ -39,26 +44,44 @@
     min-width: 200px;
   }
 
-  .sidebar-header {
+  .sidebar-brand {
     display: flex;
+    align-items: center;
     gap: 0.5rem;
     padding: 0.75rem;
     border-bottom: 1px solid var(--border-color);
   }
 
-  .sidebar-header > :first-child {
+  .brand-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    background: var(--accent-color);
+    color: #fff;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  .brand-name {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-primary);
     flex: 1;
   }
 
   .settings-btn {
     background: none;
-    border: 1px solid var(--border-color);
+    border: none;
     color: var(--text-secondary);
     cursor: pointer;
     font-size: 1rem;
-    padding: 0.35rem 0.5rem;
-    border-radius: 6px;
-    transition: all 0.15s;
+    padding: 0.25rem;
+    border-radius: 4px;
+    transition: all 0.12s;
   }
 
   .settings-btn:hover {
@@ -66,10 +89,22 @@
     color: var(--text-primary);
   }
 
+  .sidebar-actions {
+    padding: 0.5rem 0.75rem;
+  }
+
+  .sidebar-section-label {
+    padding: 0.5rem 0.75rem 0.25rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-tertiary);
+  }
+
   .sidebar-content {
     flex: 1;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
+    overflow-y: auto;
+    overflow-x: hidden;
   }
 </style>
