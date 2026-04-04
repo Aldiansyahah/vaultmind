@@ -6,10 +6,12 @@
 pub mod chunker;
 pub mod embedder;
 pub mod parser;
+pub mod pipeline;
 
 pub use chunker::{chunk_document, chunk_document_with_config, Chunk, ChunkerConfig};
 pub use embedder::{cosine_similarity, Embedder, EmbedderError, EMBEDDING_DIM};
 pub use parser::{parse_markdown, MarkdownDocument, Section};
+pub use pipeline::IndexingPipeline;
 
 pub fn version() -> &'static str {
     env!("CARGO_PKG_VERSION")
