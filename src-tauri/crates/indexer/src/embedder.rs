@@ -136,8 +136,11 @@ impl Embedder {
     }
 }
 
+/// Tokenized batch result: (input_ids, attention_mask, token_type_ids).
+type TokenizedBatch = (Vec<Vec<i64>>, Vec<Vec<i64>>, Vec<Vec<i64>>);
+
 /// Simple tokenizer for sentence-transformer models.
-fn tokenize_batch(texts: &[&str]) -> (Vec<Vec<i64>>, Vec<Vec<i64>>, Vec<Vec<i64>>) {
+fn tokenize_batch(texts: &[&str]) -> TokenizedBatch {
     let max_len = 128;
     let mut all_ids = Vec::new();
     let mut all_masks = Vec::new();

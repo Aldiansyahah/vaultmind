@@ -11,7 +11,7 @@ use tracing::{info, warn};
 use core_storage::{Database, VectorStore};
 use retriever::SearchIndex;
 
-use crate::chunker::{chunk_document, Chunk};
+use crate::chunker::chunk_document;
 use crate::embedder::Embedder;
 use crate::parser::parse_markdown;
 

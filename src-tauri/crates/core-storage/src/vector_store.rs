@@ -145,8 +145,13 @@ impl VectorStore {
         )
         .map_err(|e| VectorStoreError::Arrow(e.to_string()))?;
 
-        if self.table.is_none() {
-            // Create table with first batch
+        if let Some(table) = &self.table {
+            table
+                .add(vec![batch])
+                .execute()
+                .await
+                .map_err(|e| VectorStoreError::Lance(e.to_string()))?;
+        } else {
             let table = self
                 .db
                 .create_table(TABLE_NAME, vec![batch])
@@ -154,13 +159,6 @@ impl VectorStore {
                 .await
                 .map_err(|e| VectorStoreError::Lance(e.to_string()))?;
             self.table = Some(table);
-        } else {
-            let table = self.table.as_ref().unwrap();
-            table
-                .add(vec![batch])
-                .execute()
-                .await
-                .map_err(|e| VectorStoreError::Lance(e.to_string()))?;
         }
 
         Ok(())

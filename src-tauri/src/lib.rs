@@ -9,6 +9,7 @@ use std::path::PathBuf;
 use std::sync::Mutex;
 
 use core_storage::{Database, VaultEntry};
+use indexer::IndexingPipeline;
 use retriever::{SearchIndex, SearchResult};
 use rusqlite::Connection;
 
@@ -16,6 +17,7 @@ struct AppState {
     vault_path: Mutex<Option<PathBuf>>,
     db: Mutex<Option<Database>>,
     search_index: Mutex<Option<SearchIndex>>,
+    pipeline: Mutex<Option<IndexingPipeline>>,
 }
 
 /// Tauri IPC command: Get application version
@@ -70,6 +72,10 @@ fn set_vault_path(path: String, state: tauri::State<AppState>) -> Result<(), Str
         .search_index
         .lock()
         .map_err(|e| e.to_string())? = Some(search_index);
+
+    // Initialize indexing pipeline (without embedder for now — model download TBD)
+    let pipeline = IndexingPipeline::new(None);
+    *state.pipeline.lock().map_err(|e| e.to_string())? = Some(pipeline);
 
     *state.vault_path.lock().map_err(|e| e.to_string())? = Some(vault_path);
     Ok(())
@@ -318,6 +324,56 @@ fn unindex_note(path: String, state: tauri::State<AppState>) -> Result<(), Strin
     index.delete_document(&path).map_err(|e| e.to_string())
 }
 
+/// Tauri IPC command: Trigger full vault reindex
+#[tauri::command]
+fn reindex_vault(
+    state: tauri::State<AppState>,
+) -> Result<serde_json::Value, String> {
+    let vault_path = state
+        .vault_path
+        .lock()
+        .map_err(|e| e.to_string())?
+        .clone()
+        .ok_or("Vault path not set")?;
+
+    let pipeline_guard = state.pipeline.lock().map_err(|e| e.to_string())?;
+    let pipeline = pipeline_guard.as_ref().ok_or("Pipeline not initialized")?;
+
+    let db_guard = state.db.lock().map_err(|e| e.to_string())?;
+    let db = db_guard.as_ref().ok_or("Database not initialized")?;
+
+    let mut search_guard = state.search_index.lock().map_err(|e| e.to_string())?;
+    let search_index = search_guard.as_mut().ok_or("Search index not initialized")?;
+
+    // Run indexing synchronously (vector store disabled for now)
+    let rt = tokio::runtime::Handle::current();
+    let (indexed, skipped, errors) = rt.block_on(
+        pipeline.index_vault(&vault_path, db, search_index, &mut None),
+    );
+
+    Ok(serde_json::json!({
+        "indexed": indexed,
+        "skipped": skipped,
+        "errors": errors,
+    }))
+}
+
+/// Tauri IPC command: Get indexing status
+#[tauri::command]
+fn get_indexing_status(state: tauri::State<AppState>) -> serde_json::Value {
+    let has_pipeline = state.pipeline.lock().map(|p| p.is_some()).unwrap_or(false);
+    let has_embedder = state
+        .pipeline
+        .lock()
+        .map(|p| p.as_ref().map(|pl| pl.has_embedder()).unwrap_or(false))
+        .unwrap_or(false);
+
+    serde_json::json!({
+        "pipeline_ready": has_pipeline,
+        "embedder_active": has_embedder,
+    })
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -327,6 +383,7 @@ pub fn run() {
             vault_path: Mutex::new(None),
             db: Mutex::new(None),
             search_index: Mutex::new(None),
+            pipeline: Mutex::new(None),
         })
         .invoke_handler(tauri::generate_handler![
             get_version,
@@ -348,6 +405,8 @@ pub fn run() {
             search_notes,
             index_note,
             unindex_note,
+            reindex_vault,
+            get_indexing_status,
         ])
         .run(tauri::generate_context!())
         .expect("error while running VaultMind");
