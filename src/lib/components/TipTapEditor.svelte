@@ -21,6 +21,76 @@
 
   const existingTags = ["rust", "programming", "notes", "todo", "idea", "reference"];
 
+  /// Converts TipTap HTML output to Markdown for saving to disk.
+  function htmlToMarkdown(html: string): string {
+    const div = document.createElement("div");
+    div.innerHTML = html;
+
+    function processNode(node: Node): string {
+      if (node.nodeType === Node.TEXT_NODE) {
+        return node.textContent || "";
+      }
+
+      if (node.nodeType !== Node.ELEMENT_NODE) return "";
+
+      const el = node as HTMLElement;
+      const tag = el.tagName.toLowerCase();
+      const childText = () => Array.from(el.childNodes).map(processNode).join("");
+
+      switch (tag) {
+        case "h1":
+          return `# ${childText()}\n\n`;
+        case "h2":
+          return `## ${childText()}\n\n`;
+        case "h3":
+          return `### ${childText()}\n\n`;
+        case "p":
+          return `${childText()}\n\n`;
+        case "strong":
+        case "b":
+          return `**${childText()}**`;
+        case "em":
+        case "i":
+          return `*${childText()}*`;
+        case "code":
+          if (el.parentElement?.tagName.toLowerCase() === "pre") return childText();
+          return `\`${childText()}\``;
+        case "pre":
+          return `\`\`\`\n${childText()}\n\`\`\`\n\n`;
+        case "blockquote":
+          return childText()
+            .trim()
+            .split("\n")
+            .map((line: string) => `> ${line}`)
+            .join("\n") + "\n\n";
+        case "ul":
+          return Array.from(el.children)
+            .map((li) => `- ${processNode(li).trim()}`)
+            .join("\n") + "\n\n";
+        case "ol":
+          return Array.from(el.children)
+            .map((li, i) => `${i + 1}. ${processNode(li).trim()}`)
+            .join("\n") + "\n\n";
+        case "li":
+          return childText();
+        case "a": {
+          const href = el.getAttribute("href") || "";
+          return `[${childText()}](${href})`;
+        }
+        case "br":
+          return "\n";
+        default:
+          return childText();
+      }
+    }
+
+    return Array.from(div.childNodes)
+      .map(processNode)
+      .join("")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim() + "\n";
+  }
+
   function getNoteTitles(): string[] {
     const titles: string[] = [];
     function extractTitles(entries: typeof $vaultEntries) {
@@ -164,13 +234,14 @@
       onUpdate: () => {
         if (isInternalUpdate || !editor) return;
         const html = editor.getHTML();
+        const markdown = htmlToMarkdown(html);
         noteContent.set(html);
         checkForAutocompleteTrigger();
         if (saveTimeout) clearTimeout(saveTimeout);
         saveTimeout = setTimeout(() => {
           const path = $selectedNotePath;
           if (path) {
-            saveNoteContent(path, html);
+            saveNoteContent(path, markdown);
           }
         }, 1000);
       },

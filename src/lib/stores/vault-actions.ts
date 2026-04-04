@@ -1,4 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
+import { get } from "svelte/store";
 import { vaultEntries, selectedNotePath, noteContent, isLoading, error } from "$lib/stores/vault";
 import type { VaultEntry } from "$lib/stores/vault";
 
@@ -31,10 +32,14 @@ export async function createNewNote(name: string): Promise<void> {
 export async function renameNote(oldPath: string, newName: string): Promise<void> {
   error.set(null);
   try {
-    const newPath = newName.endsWith(".md") ? newName : `${newName}.md`;
+    const newFileName = newName.endsWith(".md") ? newName : `${newName}.md`;
+    // Preserve the directory portion of the original path
+    const lastSlash = oldPath.lastIndexOf("/");
+    const dir = lastSlash >= 0 ? oldPath.substring(0, lastSlash + 1) : "";
+    const newPath = `${dir}${newFileName}`;
     await invoke("rename_note", { oldPath, newPath });
     await loadVaultEntries();
-    if (selectedNotePath() === oldPath) {
+    if (get(selectedNotePath) === oldPath) {
       selectedNotePath.set(newPath);
     }
   } catch (e) {
@@ -47,7 +52,7 @@ export async function deleteNoteByPath(path: string): Promise<void> {
   try {
     await invoke("delete_note", { relativePath: path });
     await loadVaultEntries();
-    if (selectedNotePath() === path) {
+    if (get(selectedNotePath) === path) {
       selectedNotePath.set(null);
       noteContent.set("");
     }
@@ -61,7 +66,7 @@ export async function moveNote(oldPath: string, newPath: string): Promise<void> 
   try {
     await invoke("move_note", { oldPath, newPath });
     await loadVaultEntries();
-    if (selectedNotePath() === oldPath) {
+    if (get(selectedNotePath) === oldPath) {
       selectedNotePath.set(newPath);
     }
   } catch (e) {

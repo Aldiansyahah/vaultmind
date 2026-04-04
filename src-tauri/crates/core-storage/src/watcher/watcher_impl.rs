@@ -59,7 +59,6 @@ impl VaultWatcher {
         }
 
         let (raw_tx, raw_rx) = channel::<Event>();
-        let (debounced_tx, _debounced_rx) = channel::<WatchEvent>();
         let vault_root = vault_path.to_path_buf();
 
         let raw_watcher = RecommendedWatcher::new(
@@ -73,7 +72,8 @@ impl VaultWatcher {
             notify::Config::default(),
         )?;
 
-        let debounce_tx = debounced_tx.clone();
+        // Use the existing _event_tx so that event_rx receives the debounced events
+        let debounce_tx = self._event_tx.clone();
         std::thread::spawn(move || {
             debounce_loop(raw_rx, debounce_tx, &vault_root);
         });
@@ -82,7 +82,6 @@ impl VaultWatcher {
         watcher.watch(vault_path, RecursiveMode::Recursive)?;
 
         self.watcher = Some(watcher);
-        self._event_tx = debounced_tx;
 
         Ok(())
     }

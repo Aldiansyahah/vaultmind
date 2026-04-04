@@ -10,6 +10,7 @@ use std::sync::Mutex;
 
 use core_storage::{Database, VaultEntry};
 use retriever::{SearchIndex, SearchResult};
+use rusqlite::Connection;
 
 struct AppState {
     vault_path: Mutex<Option<PathBuf>>,
@@ -49,6 +50,27 @@ fn set_vault_path(path: String, state: tauri::State<AppState>) -> Result<(), Str
     if !vault_path.is_dir() {
         return Err(format!("Path is not a directory: {path}"));
     }
+
+    // Initialize SQLite database
+    let db_path = vault_path.join(".vaultmind").join("metadata.db");
+    if let Some(parent) = db_path.parent() {
+        std::fs::create_dir_all(parent).map_err(|e| format!("Failed to create data dir: {e}"))?;
+    }
+    let conn =
+        Connection::open(&db_path).map_err(|e| format!("Failed to open database: {e}"))?;
+    let db =
+        Database::new(conn).map_err(|e| format!("Failed to initialize database: {e}"))?;
+    *state.db.lock().map_err(|e| e.to_string())? = Some(db);
+
+    // Initialize Tantivy search index
+    let index_path = vault_path.join(".vaultmind").join("search_index");
+    let search_index = SearchIndex::new(Some(&index_path))
+        .map_err(|e| format!("Failed to initialize search index: {e}"))?;
+    *state
+        .search_index
+        .lock()
+        .map_err(|e| e.to_string())? = Some(search_index);
+
     *state.vault_path.lock().map_err(|e| e.to_string())? = Some(vault_path);
     Ok(())
 }
@@ -197,10 +219,11 @@ fn sync_note_tags(
     tags: Vec<String>,
     state: tauri::State<AppState>,
 ) -> Result<(), String> {
-    let db = state
+    let db_guard = state
         .db
         .lock()
-        .map_err(|e| e.to_string())?
+        .map_err(|e| e.to_string())?;
+    let db = db_guard
         .as_ref()
         .ok_or("Database not initialized")?;
 
@@ -216,10 +239,11 @@ fn sync_note_tags(
 /// Tauri IPC command: Get all tags with their usage counts
 #[tauri::command]
 fn get_all_tags(state: tauri::State<AppState>) -> Result<Vec<(core_storage::Tag, i64)>, String> {
-    let db = state
+    let db_guard = state
         .db
         .lock()
-        .map_err(|e| e.to_string())?
+        .map_err(|e| e.to_string())?;
+    let db = db_guard
         .as_ref()
         .ok_or("Database not initialized")?;
 
@@ -232,10 +256,11 @@ fn get_notes_for_tag(
     tag_id: i64,
     state: tauri::State<AppState>,
 ) -> Result<Vec<core_storage::Note>, String> {
-    let db = state
+    let db_guard = state
         .db
         .lock()
-        .map_err(|e| e.to_string())?
+        .map_err(|e| e.to_string())?;
+    let db = db_guard
         .as_ref()
         .ok_or("Database not initialized")?;
 
@@ -249,10 +274,11 @@ fn search_notes(
     limit: usize,
     state: tauri::State<AppState>,
 ) -> Result<Vec<SearchResult>, String> {
-    let search_index = state
+    let search_guard = state
         .search_index
         .lock()
-        .map_err(|e| e.to_string())?
+        .map_err(|e| e.to_string())?;
+    let search_index = search_guard
         .as_ref()
         .ok_or("Search index not initialized")?;
 

@@ -5,6 +5,36 @@ use serde::{Deserialize, Serialize};
 
 use crate::error::{Result, StorageError};
 
+/// Validates that a resolved path is contained within the vault directory.
+/// Prevents path traversal attacks (e.g., `../../etc/passwd`).
+fn validate_within_vault(vault_path: &Path, full_path: &Path) -> Result<()> {
+    let canonical_vault = vault_path
+        .canonicalize()
+        .map_err(StorageError::from)?;
+    // For paths that don't exist yet, canonicalize the parent
+    let canonical_full = if full_path.exists() {
+        full_path.canonicalize().map_err(StorageError::from)?
+    } else if let Some(parent) = full_path.parent() {
+        if parent.exists() {
+            let canonical_parent = parent.canonicalize().map_err(StorageError::from)?;
+            canonical_parent.join(full_path.file_name().unwrap_or_default())
+        } else {
+            // Parent doesn't exist yet — resolve as much as possible
+            full_path.to_path_buf()
+        }
+    } else {
+        full_path.to_path_buf()
+    };
+
+    if !canonical_full.starts_with(&canonical_vault) {
+        return Err(StorageError::Io(std::io::Error::new(
+            std::io::ErrorKind::PermissionDenied,
+            format!("Path escapes vault directory: {}", full_path.display()),
+        )));
+    }
+    Ok(())
+}
+
 /// Represents a file or directory entry in the vault.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VaultEntry {
@@ -99,6 +129,7 @@ fn should_skip_entry(name: &str) -> bool {
 /// If the path contains directories that don't exist, they will be created.
 pub fn create_note(vault_path: &Path, relative_path: &str, content: &str) -> Result<PathBuf> {
     let full_path = vault_path.join(relative_path);
+    validate_within_vault(vault_path, &full_path)?;
 
     if full_path.exists() {
         return Err(StorageError::Duplicate(format!(
@@ -123,6 +154,8 @@ pub fn rename_note(
 ) -> Result<()> {
     let old_full_path = vault_path.join(old_relative_path);
     let new_full_path = vault_path.join(new_relative_path);
+    validate_within_vault(vault_path, &old_full_path)?;
+    validate_within_vault(vault_path, &new_full_path)?;
 
     if !old_full_path.exists() {
         return Err(StorageError::NotFound(format!(
@@ -148,6 +181,7 @@ pub fn rename_note(
 /// Deletes a file or directory from the vault.
 pub fn delete_note(vault_path: &Path, relative_path: &str) -> Result<()> {
     let full_path = vault_path.join(relative_path);
+    validate_within_vault(vault_path, &full_path)?;
 
     if !full_path.exists() {
         return Err(StorageError::NotFound(format!(
@@ -172,6 +206,8 @@ pub fn move_note(
 ) -> Result<()> {
     let old_full_path = vault_path.join(old_relative_path);
     let new_full_path = vault_path.join(new_relative_path);
+    validate_within_vault(vault_path, &old_full_path)?;
+    validate_within_vault(vault_path, &new_full_path)?;
 
     if !old_full_path.exists() {
         return Err(StorageError::NotFound(format!(
@@ -197,6 +233,7 @@ pub fn move_note(
 /// Reads the content of a note file.
 pub fn read_note_content(vault_path: &Path, relative_path: &str) -> Result<String> {
     let full_path = vault_path.join(relative_path);
+    validate_within_vault(vault_path, &full_path)?;
 
     if !full_path.exists() {
         return Err(StorageError::NotFound(format!(
@@ -216,6 +253,7 @@ pub fn read_note_content(vault_path: &Path, relative_path: &str) -> Result<Strin
 /// Writes content to a note file.
 pub fn write_note_content(vault_path: &Path, relative_path: &str, content: &str) -> Result<()> {
     let full_path = vault_path.join(relative_path);
+    validate_within_vault(vault_path, &full_path)?;
 
     if !full_path.exists() {
         return Err(StorageError::NotFound(format!(

@@ -27,14 +27,36 @@ pub fn extract_wikilinks(content: &str) -> Vec<String> {
 /// in the order they appear in the content.
 pub fn extract_tags(content: &str) -> Vec<String> {
     let re = Regex::new(r"(?:^|\s)#([a-zA-Z0-9_-]+)").expect("Invalid tag regex");
+    let heading_re = Regex::new(r"^#{1,6}\s").expect("Invalid heading regex");
     let mut seen = std::collections::HashSet::new();
     let mut tags = Vec::new();
+    let mut in_code_block = false;
 
-    for cap in re.captures_iter(content) {
-        if let Some(m) = cap.get(1) {
-            let tag = m.as_str().to_string();
-            if seen.insert(tag.clone()) {
-                tags.push(tag);
+    for line in content.lines() {
+        let trimmed = line.trim();
+
+        // Toggle fenced code block state
+        if trimmed.starts_with("```") {
+            in_code_block = !in_code_block;
+            continue;
+        }
+
+        // Skip lines inside code blocks
+        if in_code_block {
+            continue;
+        }
+
+        // Skip markdown headings (lines starting with one or more # followed by a space)
+        if heading_re.is_match(trimmed) {
+            continue;
+        }
+
+        for cap in re.captures_iter(line) {
+            if let Some(m) = cap.get(1) {
+                let tag = m.as_str().to_string();
+                if seen.insert(tag.clone()) {
+                    tags.push(tag);
+                }
             }
         }
     }

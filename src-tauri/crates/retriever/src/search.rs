@@ -171,8 +171,23 @@ fn generate_snippet(content: &str, query: &str) -> String {
     let content_lower = content.to_lowercase();
 
     if let Some(pos) = content_lower.find(&query_lower) {
-        let start = pos.saturating_sub(60);
-        let end = (pos + query_lower.len() + 60).min(content.len());
+        // Find char-safe boundaries by walking backward/forward to valid char boundaries
+        let start = {
+            let target = pos.saturating_sub(60);
+            let mut s = target;
+            while s > 0 && !content.is_char_boundary(s) {
+                s -= 1;
+            }
+            s
+        };
+        let end = {
+            let target = (pos + query_lower.len() + 60).min(content.len());
+            let mut e = target;
+            while e < content.len() && !content.is_char_boundary(e) {
+                e += 1;
+            }
+            e
+        };
         let snippet = content[start..end].trim();
 
         if start > 0 {
