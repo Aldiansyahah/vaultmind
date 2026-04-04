@@ -1,6 +1,10 @@
 //! # graph-engine
 //!
-//! Knowledge graph with explicit (wikilinks) and implicit (cosine similarity) edges.
+//! Knowledge graph with explicit (wikilinks) and implicit (shared tags, cosine similarity) edges.
+
+pub mod graph;
+
+pub use graph::{Connection, EdgeKind, KnowledgeGraph, NoteNode};
 
 pub fn version() -> &'static str {
     env!("CARGO_PKG_VERSION")

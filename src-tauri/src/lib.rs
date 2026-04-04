@@ -9,6 +9,7 @@ use std::path::PathBuf;
 use std::sync::Mutex;
 
 use core_storage::{Database, VaultEntry};
+use graph_engine::KnowledgeGraph;
 use indexer::IndexingPipeline;
 use retriever::{SearchIndex, SearchResult};
 use rusqlite::Connection;
@@ -18,6 +19,7 @@ struct AppState {
     db: Mutex<Option<Database>>,
     search_index: Mutex<Option<SearchIndex>>,
     pipeline: Mutex<Option<IndexingPipeline>>,
+    graph: Mutex<Option<KnowledgeGraph>>,
 }
 
 /// Tauri IPC command: Get application version
@@ -76,6 +78,9 @@ fn set_vault_path(path: String, state: tauri::State<AppState>) -> Result<(), Str
     // Initialize indexing pipeline (without embedder for now — model download TBD)
     let pipeline = IndexingPipeline::new(None);
     *state.pipeline.lock().map_err(|e| e.to_string())? = Some(pipeline);
+
+    // Initialize knowledge graph
+    *state.graph.lock().map_err(|e| e.to_string())? = Some(KnowledgeGraph::new());
 
     *state.vault_path.lock().map_err(|e| e.to_string())? = Some(vault_path);
     Ok(())
@@ -374,6 +379,62 @@ fn get_indexing_status(state: tauri::State<AppState>) -> serde_json::Value {
     })
 }
 
+/// Tauri IPC command: Get backlinks for a note
+#[tauri::command]
+fn get_backlinks(path: String, state: tauri::State<AppState>) -> Result<Vec<String>, String> {
+    let graph_guard = state.graph.lock().map_err(|e| e.to_string())?;
+    let graph = graph_guard.as_ref().ok_or("Graph not initialized")?;
+    Ok(graph.get_backlinks(&path))
+}
+
+/// Tauri IPC command: Get graph neighbors within N hops
+#[tauri::command]
+fn get_graph_neighbors(
+    path: String,
+    depth: usize,
+    state: tauri::State<AppState>,
+) -> Result<Vec<String>, String> {
+    let graph_guard = state.graph.lock().map_err(|e| e.to_string())?;
+    let graph = graph_guard.as_ref().ok_or("Graph not initialized")?;
+    Ok(graph.get_neighbors(&path, depth))
+}
+
+/// Tauri IPC command: Get full graph data for visualization
+#[tauri::command]
+fn get_graph_data(state: tauri::State<AppState>) -> Result<serde_json::Value, String> {
+    let graph_guard = state.graph.lock().map_err(|e| e.to_string())?;
+    let graph = graph_guard.as_ref().ok_or("Graph not initialized")?;
+
+    let nodes: Vec<serde_json::Value> = graph
+        .all_nodes()
+        .iter()
+        .map(|n| {
+            serde_json::json!({
+                "path": n.path,
+                "title": n.title,
+                "tags": n.tags,
+            })
+        })
+        .collect();
+
+    let edges: Vec<serde_json::Value> = graph
+        .all_edges()
+        .iter()
+        .map(|e| {
+            serde_json::json!({
+                "source": e.source_path,
+                "target": e.target_path,
+                "kind": format!("{:?}", e.edge_kind),
+            })
+        })
+        .collect();
+
+    Ok(serde_json::json!({
+        "nodes": nodes,
+        "edges": edges,
+    }))
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -384,6 +445,7 @@ pub fn run() {
             db: Mutex::new(None),
             search_index: Mutex::new(None),
             pipeline: Mutex::new(None),
+            graph: Mutex::new(None),
         })
         .invoke_handler(tauri::generate_handler![
             get_version,
@@ -407,6 +469,9 @@ pub fn run() {
             unindex_note,
             reindex_vault,
             get_indexing_status,
+            get_backlinks,
+            get_graph_neighbors,
+            get_graph_data,
         ])
         .run(tauri::generate_context!())
         .expect("error while running VaultMind");
