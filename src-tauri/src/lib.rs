@@ -9,10 +9,12 @@ use std::path::PathBuf;
 use std::sync::Mutex;
 
 use core_storage::{Database, VaultEntry};
+use retriever::{SearchIndex, SearchResult};
 
 struct AppState {
     vault_path: Mutex<Option<PathBuf>>,
     db: Mutex<Option<Database>>,
+    search_index: Mutex<Option<SearchIndex>>,
 }
 
 /// Tauri IPC command: Get application version
@@ -240,6 +242,56 @@ fn get_notes_for_tag(
     db.get_notes_for_tag(tag_id).map_err(|e| e.to_string())
 }
 
+/// Tauri IPC command: Full-text search across all notes
+#[tauri::command]
+fn search_notes(
+    query: String,
+    limit: usize,
+    state: tauri::State<AppState>,
+) -> Result<Vec<SearchResult>, String> {
+    let search_index = state
+        .search_index
+        .lock()
+        .map_err(|e| e.to_string())?
+        .as_ref()
+        .ok_or("Search index not initialized")?;
+
+    search_index
+        .search(&query, limit)
+        .map_err(|e| e.to_string())
+}
+
+/// Tauri IPC command: Index a note for full-text search
+#[tauri::command]
+fn index_note(
+    path: String,
+    title: String,
+    content: String,
+    state: tauri::State<AppState>,
+) -> Result<(), String> {
+    let mut search_index = state.search_index.lock().map_err(|e| e.to_string())?;
+
+    let index = search_index
+        .as_mut()
+        .ok_or("Search index not initialized")?;
+
+    index
+        .upsert_document(&path, &title, &content)
+        .map_err(|e| e.to_string())
+}
+
+/// Tauri IPC command: Remove a note from the search index
+#[tauri::command]
+fn unindex_note(path: String, state: tauri::State<AppState>) -> Result<(), String> {
+    let mut search_index = state.search_index.lock().map_err(|e| e.to_string())?;
+
+    let index = search_index
+        .as_mut()
+        .ok_or("Search index not initialized")?;
+
+    index.delete_document(&path).map_err(|e| e.to_string())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -247,6 +299,7 @@ pub fn run() {
         .manage(AppState {
             vault_path: Mutex::new(None),
             db: Mutex::new(None),
+            search_index: Mutex::new(None),
         })
         .invoke_handler(tauri::generate_handler![
             get_version,
@@ -265,6 +318,9 @@ pub fn run() {
             sync_note_tags,
             get_all_tags,
             get_notes_for_tag,
+            search_notes,
+            index_note,
+            unindex_note,
         ])
         .run(tauri::generate_context!())
         .expect("error while running VaultMind");
