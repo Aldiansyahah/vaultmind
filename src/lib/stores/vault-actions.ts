@@ -19,11 +19,13 @@ export async function loadVaultEntries(): Promise<void> {
 export async function createNewNote(name: string): Promise<void> {
   error.set(null);
   try {
+    const relativePath = name.endsWith(".md") ? name : `${name}.md`;
     await invoke("create_note", {
-      relativePath: name.endsWith(".md") ? name : `${name}.md`,
+      relativePath,
       content: `# ${name.replace(/\.md$/, "")}\n`,
     });
     await loadVaultEntries();
+    await openNote(relativePath);
   } catch (e) {
     error.set(`Failed to create note: ${e}`);
   }
@@ -92,7 +94,6 @@ export async function saveNoteContent(path: string, content: string): Promise<vo
   error.set(null);
   try {
     await invoke("write_note_content", { relativePath: path, content });
-    noteContent.set(content);
   } catch (e) {
     error.set(`Failed to save note: ${e}`);
   }

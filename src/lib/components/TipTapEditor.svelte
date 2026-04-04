@@ -21,6 +21,55 @@
 
   const existingTags = ["rust", "programming", "notes", "todo", "idea", "reference"];
 
+  /// Converts basic Markdown to HTML for TipTap editor input.
+  function markdownToHtml(md: string): string {
+    return md
+      .split("\n\n")
+      .map((block) => {
+        const trimmed = block.trim();
+        if (!trimmed) return "";
+        if (trimmed.startsWith("### ")) return `<h3>${trimmed.slice(4)}</h3>`;
+        if (trimmed.startsWith("## ")) return `<h2>${trimmed.slice(3)}</h2>`;
+        if (trimmed.startsWith("# ")) return `<h1>${trimmed.slice(2)}</h1>`;
+        if (trimmed.startsWith("```")) {
+          const lines = trimmed.split("\n");
+          const code = lines.slice(1, -1).join("\n");
+          return `<pre><code>${code}</code></pre>`;
+        }
+        if (trimmed.startsWith("> ")) {
+          const quote = trimmed
+            .split("\n")
+            .map((l) => l.replace(/^>\s?/, ""))
+            .join("<br>");
+          return `<blockquote><p>${quote}</p></blockquote>`;
+        }
+        if (trimmed.startsWith("- ") || trimmed.startsWith("* ")) {
+          const items = trimmed
+            .split("\n")
+            .map((l) => `<li>${l.replace(/^[-*]\s/, "")}</li>`)
+            .join("");
+          return `<ul>${items}</ul>`;
+        }
+        if (/^\d+\.\s/.test(trimmed)) {
+          const items = trimmed
+            .split("\n")
+            .map((l) => `<li>${l.replace(/^\d+\.\s/, "")}</li>`)
+            .join("");
+          return `<ol>${items}</ol>`;
+        }
+        // Inline formatting
+        let html = trimmed
+          .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+          .replace(/\*(.+?)\*/g, "<em>$1</em>")
+          .replace(/`([^`]+)`/g, "<code>$1</code>")
+          .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>')
+          .replace(/\n/g, "<br>");
+        return `<p>${html}</p>`;
+      })
+      .filter(Boolean)
+      .join("");
+  }
+
   /// Converts TipTap HTML output to Markdown for saving to disk.
   function htmlToMarkdown(html: string): string {
     const div = document.createElement("div");
@@ -231,6 +280,7 @@
 
   function createEditor(el: HTMLElement) {
     editor?.destroy();
+    const initialHtml = markdownToHtml($noteContent);
     editor = new Editor({
       element: el,
       extensions: [
@@ -239,12 +289,11 @@
         }),
         Link.configure({ openOnClick: false }),
       ],
-      content: $noteContent,
+      content: initialHtml,
       onUpdate: () => {
         if (isInternalUpdate || !editor) return;
         const html = editor.getHTML();
         const markdown = htmlToMarkdown(html);
-        noteContent.set(html);
         checkForAutocompleteTrigger();
         if (saveTimeout) clearTimeout(saveTimeout);
         saveTimeout = setTimeout(() => {
@@ -278,10 +327,11 @@
   $effect(() => {
     const content = $noteContent;
     if (editor && !editor.isDestroyed) {
-      const currentContent = editor.getHTML();
-      if (content !== currentContent) {
+      const html = markdownToHtml(content);
+      const currentHtml = editor.getHTML();
+      if (html !== currentHtml) {
         isInternalUpdate = true;
-        editor.commands.setContent(content);
+        editor.commands.setContent(html);
         isInternalUpdate = false;
       }
     }
