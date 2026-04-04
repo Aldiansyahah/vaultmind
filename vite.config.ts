@@ -10,6 +10,7 @@ export default defineConfig(async () => ({
     alias: {
       $lib: path.resolve("./src/lib"),
     },
+    conditions: ["browser", "svelte"],
   },
   clearScreen: false,
   server: {
