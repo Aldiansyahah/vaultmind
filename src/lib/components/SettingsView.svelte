@@ -9,6 +9,9 @@
 
   let localVaultPath = $state($settings.vaultPath || "");
   let localFontSize = $state($settings.editorFontSize);
+  let localBaseUrl = $state($settings.llm.baseUrl || "");
+  let localApiKey = $state($settings.llm.apiKey || "");
+  let localModel = $state($settings.llm.model || "");
   let saveStatus = $state<"idle" | "saved" | "error">("idle");
   let reindexStatus = $state<"idle" | "running" | "done">("idle");
   let reindexResult = $state<string>("");
@@ -53,6 +56,19 @@
       saveStatus = "error";
       setTimeout(() => (saveStatus = "idle"), 3000);
     }
+  }
+
+  function saveLlmConfig() {
+    settings.update((s) => ({
+      ...s,
+      llm: {
+        baseUrl: localBaseUrl.trim(),
+        apiKey: localApiKey.trim(),
+        model: localModel.trim(),
+      },
+    }));
+    saveStatus = "saved";
+    setTimeout(() => (saveStatus = "idle"), 2000);
   }
 
   async function triggerReindex() {
@@ -120,6 +136,28 @@
         />
         <span class="font-size-value">{localFontSize}px</span>
       </div>
+    </section>
+
+    <section class="setting-group">
+      <h3>AI Model (LLM)</h3>
+      <div class="llm-field">
+        <label>API Base URL</label>
+        <input type="text" bind:value={localBaseUrl} placeholder="https://api.openai.com/v1" />
+      </div>
+      <div class="llm-field">
+        <label>API Key</label>
+        <input type="password" bind:value={localApiKey} placeholder="sk-..." />
+      </div>
+      <div class="llm-field">
+        <label>Model</label>
+        <input type="text" bind:value={localModel} placeholder="gpt-4o-mini" />
+      </div>
+      <button class="btn-primary" onclick={saveLlmConfig}>Save LLM Config</button>
+      <p class="current-value">
+        {$settings.llm.baseUrl
+          ? `Connected: ${$settings.llm.model} @ ${$settings.llm.baseUrl}`
+          : "Not configured — Chat uses search-only mode"}
+      </p>
     </section>
 
     <section class="setting-group">
@@ -298,6 +336,33 @@
     text-align: right;
     font-family: monospace;
     color: var(--text-secondary);
+  }
+
+  .llm-field {
+    margin-bottom: 0.5rem;
+  }
+
+  .llm-field label {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.2rem;
+  }
+
+  .llm-field input {
+    width: 100%;
+    padding: 0.4rem 0.5rem;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--text-primary);
+    font-size: 0.85rem;
+    outline: none;
+    box-sizing: border-box;
+  }
+
+  .llm-field input:focus {
+    border-color: var(--accent-color);
   }
 
   .btn-reindex {

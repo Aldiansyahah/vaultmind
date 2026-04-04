@@ -351,7 +351,7 @@ fn reindex_vault(
     let search_index = search_guard.as_mut().ok_or("Search index not initialized")?;
 
     // Run indexing synchronously (vector store disabled for now)
-    let rt = tokio::runtime::Handle::current();
+    let rt = tokio::runtime::Runtime::new().map_err(|e| e.to_string())?;
     let (indexed, skipped, errors) = rt.block_on(
         pipeline.index_vault(&vault_path, db, search_index, &mut None),
     );
@@ -435,53 +435,177 @@ fn get_graph_data(state: tauri::State<AppState>) -> Result<serde_json::Value, St
     }))
 }
 
-/// Tauri IPC command: Chat with AI agent (search-based fallback if no LLM)
+/// Tool executor that uses AppState to interact with the knowledge base.
+struct VaultToolExecutor {
+    vault_path: PathBuf,
+    search_results: Vec<SearchResult>,
+}
+
+impl agent_runtime::ToolExecutor for VaultToolExecutor {
+    fn execute(&self, tool_name: &str, arguments: &str) -> String {
+        match tool_name {
+            "search_notes" => {
+                serde_json::to_string(&self.search_results).unwrap_or_default()
+            }
+            "read_note" => {
+                let args: serde_json::Value = serde_json::from_str(arguments).unwrap_or_default();
+                let path = args["path"].as_str().unwrap_or("");
+                core_storage::read_note_content(&self.vault_path, path)
+                    .unwrap_or_else(|e| format!("Error: {e}"))
+            }
+            "list_notes" => {
+                core_storage::list_vault_files(&self.vault_path)
+                    .map(|entries| {
+                        let names: Vec<String> = entries.iter().map(|e| e.path.clone()).collect();
+                        serde_json::to_string(&names).unwrap_or_default()
+                    })
+                    .unwrap_or_else(|e| format!("Error: {e}"))
+            }
+            "create_note" => {
+                let args: serde_json::Value = serde_json::from_str(arguments).unwrap_or_default();
+                let title = args["title"].as_str().unwrap_or("untitled");
+                let content = args["content"].as_str().unwrap_or("");
+                let filename = format!("{}.md", title.replace(' ', "-").to_lowercase());
+                match core_storage::create_note(&self.vault_path, &filename, content) {
+                    Ok(_) => format!("Created note: {filename}"),
+                    Err(e) => format!("Error: {e}"),
+                }
+            }
+            "edit_note" => {
+                let args: serde_json::Value = serde_json::from_str(arguments).unwrap_or_default();
+                let path = args["path"].as_str().unwrap_or("");
+                let content = args["content"].as_str().unwrap_or("");
+                match core_storage::write_note_content(&self.vault_path, path, content) {
+                    Ok(()) => format!("Updated note: {path}"),
+                    Err(e) => format!("Error: {e}"),
+                }
+            }
+            "get_backlinks" => {
+                let args: serde_json::Value = serde_json::from_str(arguments).unwrap_or_default();
+                let path = args["path"].as_str().unwrap_or("");
+                format!("Backlinks for {path}: (graph not populated in this context)")
+            }
+            _ => format!("Unknown tool: {tool_name}"),
+        }
+    }
+}
+
+/// Tauri IPC command: Chat with AI agent
+/// Uses real LLM when base_url + model configured, falls back to search
 #[tauri::command]
 fn chat_with_agent(
     message: String,
+    base_url: Option<String>,
+    api_key: Option<String>,
+    model: Option<String>,
     state: tauri::State<AppState>,
 ) -> Result<serde_json::Value, String> {
-    // Use search to find relevant context
+    let vault_path = state
+        .vault_path
+        .lock()
+        .map_err(|e| e.to_string())?
+        .clone()
+        .ok_or("Vault path not set")?;
+
+    // Search for context first
     let search_guard = state.search_index.lock().map_err(|e| e.to_string())?;
     let search_index = search_guard.as_ref().ok_or("Search index not initialized")?;
+    let results = search_index.search(&message, 5).map_err(|e| e.to_string())?;
+    drop(search_guard);
 
-    let results = search_index.search(&message, 3).map_err(|e| e.to_string())?;
+    // Check if LLM is configured
+    let has_llm = base_url.as_ref().map(|u| !u.is_empty()).unwrap_or(false)
+        && model.as_ref().map(|m| !m.is_empty()).unwrap_or(false);
 
+    if has_llm {
+        // Use real LLM agent
+        let config = agent_runtime::LlmConfig {
+            base_url: base_url.unwrap_or_default(),
+            api_key: api_key.filter(|k| !k.is_empty()),
+            model: model.unwrap_or_default(),
+            max_tokens: 2048,
+            temperature: 0.3,
+        };
+
+        let agent = agent_runtime::Agent::new(config);
+        let executor = VaultToolExecutor {
+            vault_path,
+            search_results: results.clone(),
+        };
+
+        let rt = tokio::runtime::Runtime::new().map_err(|e| e.to_string())?;
+        match rt.block_on(agent.run(&message, &executor)) {
+            Ok(response) => {
+                let sources: Vec<serde_json::Value> = results
+                    .iter()
+                    .take(3)
+                    .map(|r| serde_json::json!({"path": r.path, "title": r.title}))
+                    .collect();
+
+                Ok(serde_json::json!({
+                    "response": response.message,
+                    "sources": sources,
+                    "tool_calls": response.tool_calls_made,
+                    "iterations": response.iterations,
+                    "mode": "llm"
+                }))
+            }
+            Err(e) => {
+                // Fall back to search on LLM error
+                Ok(search_fallback_response(&message, &results, &format!("LLM error: {e}")))
+            }
+        }
+    } else {
+        // Search-only fallback
+        Ok(search_fallback_response(&message, &results, ""))
+    }
+}
+
+fn search_fallback_response(
+    query: &str,
+    results: &[SearchResult],
+    error_note: &str,
+) -> serde_json::Value {
     if results.is_empty() {
-        return Ok(serde_json::json!({
-            "response": format!("I couldn't find any notes related to '{}'. Try creating some notes first, then reindex your vault.", message),
+        return serde_json::json!({
+            "response": format!("I couldn't find any notes related to '{}'. Try creating some notes first, then reindex your vault.", query),
             "sources": [],
-            "tool_calls": []
-        }));
+            "tool_calls": [],
+            "mode": "search"
+        });
     }
 
-    // Build context from search results
     let context: Vec<String> = results
         .iter()
+        .take(3)
         .map(|r| format!("**{}** ({})\n{}", r.title, r.path, r.snippet))
         .collect();
 
+    let prefix = if error_note.is_empty() {
+        String::new()
+    } else {
+        format!("*Note: {}. Showing search results instead.*\n\n", error_note)
+    };
+
     let response = format!(
-        "Based on your notes, here's what I found about '{}':\n\n{}",
-        message,
+        "{}Here's what I found about '{}':\n\n{}",
+        prefix,
+        query,
         context.join("\n\n---\n\n")
     );
 
     let sources: Vec<serde_json::Value> = results
         .iter()
-        .map(|r| {
-            serde_json::json!({
-                "path": r.path,
-                "title": r.title,
-            })
-        })
+        .take(3)
+        .map(|r| serde_json::json!({"path": r.path, "title": r.title}))
         .collect();
 
-    Ok(serde_json::json!({
+    serde_json::json!({
         "response": response,
         "sources": sources,
-        "tool_calls": ["search_notes"]
-    }))
+        "tool_calls": ["search_notes"],
+        "mode": "search"
+    })
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]

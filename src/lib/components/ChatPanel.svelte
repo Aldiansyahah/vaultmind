@@ -1,6 +1,7 @@
 <script lang="ts">
   import { invoke } from "@tauri-apps/api/core";
   import { createEventDispatcher } from "svelte";
+  import { settings } from "$lib/stores/settings";
 
   const dispatch = createEventDispatcher();
 
@@ -25,10 +26,17 @@
     scrollToBottom();
 
     try {
-      const result: { response: string; sources: { path: string; title: string }[] } = await invoke(
-        "chat_with_agent",
-        { message: text },
-      );
+      const llm = $settings.llm;
+      const result: {
+        response: string;
+        sources: { path: string; title: string }[];
+        mode?: string;
+      } = await invoke("chat_with_agent", {
+        message: text,
+        baseUrl: llm.baseUrl || null,
+        apiKey: llm.apiKey || null,
+        model: llm.model || null,
+      });
       messages.push({
         role: "assistant",
         content: result.response,
