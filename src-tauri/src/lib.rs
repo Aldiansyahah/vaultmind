@@ -197,12 +197,8 @@ fn sync_note_tags(
     tags: Vec<String>,
     state: tauri::State<AppState>,
 ) -> Result<(), String> {
-    let db = state
-        .db
-        .lock()
-        .map_err(|e| e.to_string())?
-        .as_ref()
-        .ok_or("Database not initialized")?;
+    let db_guard = state.db.lock().map_err(|e| e.to_string())?;
+    let db = db_guard.as_ref().ok_or("Database not initialized")?;
 
     let note = db
         .get_note_by_path(&note_path)
@@ -216,12 +212,8 @@ fn sync_note_tags(
 /// Tauri IPC command: Get all tags with their usage counts
 #[tauri::command]
 fn get_all_tags(state: tauri::State<AppState>) -> Result<Vec<(core_storage::Tag, i64)>, String> {
-    let db = state
-        .db
-        .lock()
-        .map_err(|e| e.to_string())?
-        .as_ref()
-        .ok_or("Database not initialized")?;
+    let db_guard = state.db.lock().map_err(|e| e.to_string())?;
+    let db = db_guard.as_ref().ok_or("Database not initialized")?;
 
     db.list_all_tags_with_counts().map_err(|e| e.to_string())
 }
@@ -232,12 +224,8 @@ fn get_notes_for_tag(
     tag_id: i64,
     state: tauri::State<AppState>,
 ) -> Result<Vec<core_storage::Note>, String> {
-    let db = state
-        .db
-        .lock()
-        .map_err(|e| e.to_string())?
-        .as_ref()
-        .ok_or("Database not initialized")?;
+    let db_guard = state.db.lock().map_err(|e| e.to_string())?;
+    let db = db_guard.as_ref().ok_or("Database not initialized")?;
 
     db.get_notes_for_tag(tag_id).map_err(|e| e.to_string())
 }
@@ -249,10 +237,8 @@ fn search_notes(
     limit: usize,
     state: tauri::State<AppState>,
 ) -> Result<Vec<SearchResult>, String> {
-    let search_index = state
-        .search_index
-        .lock()
-        .map_err(|e| e.to_string())?
+    let index_guard = state.search_index.lock().map_err(|e| e.to_string())?;
+    let search_index = index_guard
         .as_ref()
         .ok_or("Search index not initialized")?;
 
