@@ -8,6 +8,7 @@ pub mod file_ops;
 pub mod migrations;
 pub mod models;
 pub mod parser;
+pub mod vector_store;
 pub mod watcher;
 
 pub use database::Database;
@@ -18,6 +19,7 @@ pub use file_ops::{
 };
 pub use models::{Note, NoteTag, Tag};
 pub use parser::{extract_tags, extract_wikilinks};
+pub use vector_store::{VectorSearchResult, VectorStore, VectorStoreError};
 pub use watcher::VaultWatcher;
 pub use watcher::WatchEvent;
 

@@ -15,6 +15,10 @@ rusqlite.workspace = true
 notify.workspace = true
 notify-debouncer-mini.workspace = true
 regex = "1"
+lancedb.workspace = true
+arrow-array.workspace = true
+arrow-schema.workspace = true
+futures = "0.3"
 
 [dev-dependencies]
 tempfile = "3"
