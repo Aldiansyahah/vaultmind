@@ -351,7 +351,7 @@ fn reindex_vault(
     let search_index = search_guard.as_mut().ok_or("Search index not initialized")?;
 
     // Run indexing synchronously (vector store disabled for now)
-    let rt = tokio::runtime::Handle::current();
+    let rt = tokio::runtime::Runtime::new().map_err(|e| e.to_string())?;
     let (indexed, skipped, errors) = rt.block_on(
         pipeline.index_vault(&vault_path, db, search_index, &mut None),
     );
@@ -533,7 +533,7 @@ fn chat_with_agent(
             search_results: results.clone(),
         };
 
-        let rt = tokio::runtime::Handle::current();
+        let rt = tokio::runtime::Runtime::new().map_err(|e| e.to_string())?;
         match rt.block_on(agent.run(&message, &executor)) {
             Ok(response) => {
                 let sources: Vec<serde_json::Value> = results
