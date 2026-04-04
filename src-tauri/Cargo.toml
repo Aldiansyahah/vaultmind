@@ -13,7 +13,7 @@ resolver = "2"
 version = "0.1.0"
 edition = "2021"
 license = "MIT"
-repository = "https://github.com/YOUR_USERNAME/vaultmind"
+repository = "https://github.com/Aldiansyahahah/vaultmind"
 
 [workspace.dependencies]
 # Shared dependencies across crates
@@ -65,7 +65,9 @@ anyhow.workspace = true
 tokio.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true
+rusqlite.workspace = true
 tauri = { version = "2", features = [] }
+tauri-plugin-dialog = "2"
 tauri-plugin-shell = "2"
 
 [build-dependencies]

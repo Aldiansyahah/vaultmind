@@ -5,21 +5,21 @@
 VaultMind is a desktop app built with [Tauri 2.0](https://v2.tauri.app/) where Retrieval-Augmented Generation (RAG) is a first-class architectural concern — not a plugin afterthought. Every note you create is automatically parsed, chunked, embedded, and connected in a knowledge graph for high-quality AI-powered retrieval.
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![CI](https://img.shields.io/github/actions/workflow/status/YOUR_USERNAME/vaultmind/ci.yml?branch=develop&label=CI)
+![CI](https://img.shields.io/github/actions/workflow/status/Aldiansyahahah/vaultmind/ci.yml?branch=develop&label=CI)
 ![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Linux%20%7C%20Windows-lightgrey)
 
 ---
 
 ## Why VaultMind?
 
-| | Obsidian + Plugins | VaultMind |
-|---|---|---|
-| Chunking | Naive (per-file/heading) | AST-based with hierarchical context |
-| Embeddings | Plugin dependency | Built-in (ONNX, local-first) |
-| Knowledge Graph | Link graph only | Explicit (wikilinks) + implicit (semantic similarity) |
-| AI Agent | Chat-only | Action-capable (create, edit, link, refactor notes) |
-| Retrieval | Vector search only | Hybrid (vector + BM25 + graph expansion + re-ranking) |
-| Architecture | Plugin bolt-on | RAG as core design principle |
+|                 | Obsidian + Plugins       | VaultMind                                             |
+| --------------- | ------------------------ | ----------------------------------------------------- |
+| Chunking        | Naive (per-file/heading) | AST-based with hierarchical context                   |
+| Embeddings      | Plugin dependency        | Built-in (ONNX, local-first)                          |
+| Knowledge Graph | Link graph only          | Explicit (wikilinks) + implicit (semantic similarity) |
+| AI Agent        | Chat-only                | Action-capable (create, edit, link, refactor notes)   |
+| Retrieval       | Vector search only       | Hybrid (vector + BM25 + graph expansion + re-ranking) |
+| Architecture    | Plugin bolt-on           | RAG as core design principle                          |
 
 ## Features (Roadmap)
 
@@ -31,15 +31,15 @@ VaultMind is a desktop app built with [Tauri 2.0](https://v2.tauri.app/) where R
 
 ## Tech Stack
 
-| Layer | Technology |
-|---|---|
-| App Shell | Tauri 2.0 (Rust) |
-| Frontend | Svelte 5 + TipTap editor |
-| Vector DB | LanceDB (embedded) |
-| Metadata | SQLite (rusqlite) |
-| Full-Text | Tantivy |
+| Layer      | Technology                      |
+| ---------- | ------------------------------- |
+| App Shell  | Tauri 2.0 (Rust)                |
+| Frontend   | Svelte 5 + TipTap editor        |
+| Vector DB  | LanceDB (embedded)              |
+| Metadata   | SQLite (rusqlite)               |
+| Full-Text  | Tantivy                         |
 | Embeddings | ONNX Runtime (all-MiniLM-L6-v2) |
-| Graph | petgraph |
+| Graph      | petgraph                        |
 
 ## Quick Start
 
@@ -54,7 +54,7 @@ VaultMind is a desktop app built with [Tauri 2.0](https://v2.tauri.app/) where R
 
 ```bash
 # Clone the repository
-git clone https://github.com/YOUR_USERNAME/vaultmind.git
+git clone https://github.com/Aldiansyahahah/vaultmind.git
 cd vaultmind
 
 # Run the setup script (installs dependencies, hooks, etc.)
@@ -101,12 +101,12 @@ We welcome contributions from both humans and AI agents. See [CONTRIBUTING.md](C
 
 ### Branch Strategy
 
-| Branch | Purpose |
-|---|---|
-| `main` | Stable releases |
-| `develop` | Integration branch |
-| `feature/*` | New features |
-| `fix/*` | Bug fixes |
+| Branch      | Purpose            |
+| ----------- | ------------------ |
+| `main`      | Stable releases    |
+| `develop`   | Integration branch |
+| `feature/*` | New features       |
+| `fix/*`     | Bug fixes          |
 
 ## License
 
