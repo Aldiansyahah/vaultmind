@@ -42,6 +42,7 @@ pnpm tauri dev
 ```
 
 The setup script will:
+
 - Install Rust and Node dependencies
 - Configure pre-commit hooks (rustfmt, clippy, eslint, prettier)
 - Download the default ONNX embedding model via Git LFS
@@ -53,13 +54,13 @@ The setup script will:
 
 ## Branch Strategy
 
-| Branch | Purpose | Merges Into | Protection |
-|---|---|---|---|
-| `main` | Stable releases | — | PR + 1 review + CI green |
-| `develop` | Integration | `main` (on release) | PR + CI green |
-| `feature/*` | New features | `develop` | None |
-| `fix/*` | Bug fixes | `develop` | None |
-| `release/*` | Release prep | `main` + `develop` | CI green |
+| Branch      | Purpose         | Merges Into         | Protection               |
+| ----------- | --------------- | ------------------- | ------------------------ |
+| `main`      | Stable releases | —                   | PR + 1 review + CI green |
+| `develop`   | Integration     | `main` (on release) | PR + CI green            |
+| `feature/*` | New features    | `develop`           | None                     |
+| `fix/*`     | Bug fixes       | `develop`           | None                     |
+| `release/*` | Release prep    | `main` + `develop`  | CI green                 |
 
 ### Creating a Branch
 
@@ -85,14 +86,14 @@ Before starting work, create or find a GitHub issue describing what you'll do. T
 
 Follow the module structure. Changes typically touch one of these crates:
 
-| Crate | Location | Responsibility |
-|---|---|---|
-| `core-storage` | `src-tauri/crates/core-storage/` | File I/O, SQLite, LanceDB |
-| `indexer` | `src-tauri/crates/indexer/` | Markdown parsing, chunking, embedding |
-| `graph-engine` | `src-tauri/crates/graph-engine/` | Knowledge graph operations |
-| `retriever` | `src-tauri/crates/retriever/` | Hybrid search, re-ranking |
-| `agent-runtime` | `src-tauri/crates/agent-runtime/` | LLM integration, tool execution |
-| Frontend | `src/` | Svelte UI components and views |
+| Crate           | Location                          | Responsibility                        |
+| --------------- | --------------------------------- | ------------------------------------- |
+| `core-storage`  | `src-tauri/crates/core-storage/`  | File I/O, SQLite, LanceDB             |
+| `indexer`       | `src-tauri/crates/indexer/`       | Markdown parsing, chunking, embedding |
+| `graph-engine`  | `src-tauri/crates/graph-engine/`  | Knowledge graph operations            |
+| `retriever`     | `src-tauri/crates/retriever/`     | Hybrid search, re-ranking             |
+| `agent-runtime` | `src-tauri/crates/agent-runtime/` | LLM integration, tool execution       |
+| Frontend        | `src/`                            | Svelte UI components and views        |
 
 ### 3. Test Your Changes
 
@@ -156,17 +157,17 @@ refactor(graph-engine): extract edge builder into trait
 
 ## Testing
 
-| Level | Framework | What to Test |
-|---|---|---|
-| Unit | `cargo test` | Individual functions, struct methods |
+| Level       | Framework                | What to Test                         |
+| ----------- | ------------------------ | ------------------------------------ |
+| Unit        | `cargo test`             | Individual functions, struct methods |
 | Integration | `cargo test` + temp dirs | Cross-crate interactions, SQLite ops |
-| E2E | Playwright | Full app workflows |
-| Benchmark | `criterion.rs` | Indexing speed, search latency |
-| RAG Quality | Custom eval | Retrieval relevance (MRR, Recall@k) |
+| E2E         | Playwright               | Full app workflows                   |
+| Benchmark   | `criterion.rs`           | Indexing speed, search latency       |
+| RAG Quality | Custom eval              | Retrieval relevance (MRR, Recall@k)  |
 
 ### Writing Tests
 
-```rust
+````rust
 // In src-tauri/crates/indexer/src/chunker.rs
 #[cfg(test)]
 mod tests {
@@ -176,13 +177,13 @@ mod tests {
     fn test_chunk_respects_code_block_boundaries() {
         let markdown = "# Title\n\n```rust\nfn main() {\n    println!(\"hello\");\n}\n```\n\nSome text.";
         let chunks = chunk_document(markdown, &ChunkConfig::default());
-        
+
         // Code block should never be split
         let code_chunk = chunks.iter().find(|c| c.content.contains("fn main")).unwrap();
         assert!(code_chunk.content.contains("println!"));
     }
 }
-```
+````
 
 ---
 
@@ -197,14 +198,14 @@ mod tests {
 
 ### PR Review Checklist
 
-| Criteria | Requirement |
-|---|---|
-| Correctness | Code does what the PR claims |
-| Tests | New tests added, existing tests pass |
-| Performance | No unnecessary allocations |
-| Safety | No unsafe without justification |
-| Documentation | Public APIs documented |
-| Style | Passes rustfmt + clippy |
+| Criteria      | Requirement                          |
+| ------------- | ------------------------------------ |
+| Correctness   | Code does what the PR claims         |
+| Tests         | New tests added, existing tests pass |
+| Performance   | No unnecessary allocations           |
+| Safety        | No unsafe without justification      |
+| Documentation | Public APIs documented               |
+| Style         | Passes rustfmt + clippy              |
 
 ---
 

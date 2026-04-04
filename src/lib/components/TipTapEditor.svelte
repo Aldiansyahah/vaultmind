@@ -58,19 +58,25 @@
         case "pre":
           return `\`\`\`\n${childText()}\n\`\`\`\n\n`;
         case "blockquote":
-          return childText()
-            .trim()
-            .split("\n")
-            .map((line: string) => `> ${line}`)
-            .join("\n") + "\n\n";
+          return (
+            childText()
+              .trim()
+              .split("\n")
+              .map((line: string) => `> ${line}`)
+              .join("\n") + "\n\n"
+          );
         case "ul":
-          return Array.from(el.children)
-            .map((li) => `- ${processNode(li).trim()}`)
-            .join("\n") + "\n\n";
+          return (
+            Array.from(el.children)
+              .map((li) => `- ${processNode(li).trim()}`)
+              .join("\n") + "\n\n"
+          );
         case "ol":
-          return Array.from(el.children)
-            .map((li, i) => `${i + 1}. ${processNode(li).trim()}`)
-            .join("\n") + "\n\n";
+          return (
+            Array.from(el.children)
+              .map((li, i) => `${i + 1}. ${processNode(li).trim()}`)
+              .join("\n") + "\n\n"
+          );
         case "li":
           return childText();
         case "a": {
@@ -84,11 +90,13 @@
       }
     }
 
-    return Array.from(div.childNodes)
-      .map(processNode)
-      .join("")
-      .replace(/\n{3,}/g, "\n\n")
-      .trim() + "\n";
+    return (
+      Array.from(div.childNodes)
+        .map(processNode)
+        .join("")
+        .replace(/\n{3,}/g, "\n\n")
+        .trim() + "\n"
+    );
   }
 
   function getNoteTitles(): string[] {
