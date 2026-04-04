@@ -3,6 +3,12 @@
 //! Markdown AST parsing, smart chunking, and embedding generation.
 //! Pipeline: Markdown -> AST -> Semantic Segments -> Chunks -> Embeddings
 
+pub mod chunker;
+pub mod parser;
+
+pub use chunker::{chunk_document, chunk_document_with_config, Chunk, ChunkerConfig};
+pub use parser::{parse_markdown, MarkdownDocument, Section};
+
 pub fn version() -> &'static str {
     env!("CARGO_PKG_VERSION")
 }
