@@ -13,6 +13,7 @@ thiserror.workspace = true
 tokio.workspace = true
 tracing.workspace = true
 pulldown-cmark.workspace = true
+ort.workspace = true
 
 [dev-dependencies]
 tempfile = "3"
