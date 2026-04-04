@@ -43,3 +43,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Tantivy full-text search index with BM25 scoring (P1-07)
 - Search API: upsert, delete, query with title boost (3x) and snippet generation (P1-07)
 - Persisted index that survives app restarts (P1-07)
+- Search UI modal with Ctrl+K/Cmd+K keyboard shortcut (P1-08)
+- Search-as-you-type with 200ms debounce and result cards (P1-08)
+- Keyboard navigation: arrow keys, Enter to select, ESC to close (P1-08)
+- Tauri IPC commands: search_notes, index_note, unindex_note (P1-08)
