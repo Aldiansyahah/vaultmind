@@ -435,6 +435,55 @@ fn get_graph_data(state: tauri::State<AppState>) -> Result<serde_json::Value, St
     }))
 }
 
+/// Tauri IPC command: Chat with AI agent (search-based fallback if no LLM)
+#[tauri::command]
+fn chat_with_agent(
+    message: String,
+    state: tauri::State<AppState>,
+) -> Result<serde_json::Value, String> {
+    // Use search to find relevant context
+    let search_guard = state.search_index.lock().map_err(|e| e.to_string())?;
+    let search_index = search_guard.as_ref().ok_or("Search index not initialized")?;
+
+    let results = search_index.search(&message, 3).map_err(|e| e.to_string())?;
+
+    if results.is_empty() {
+        return Ok(serde_json::json!({
+            "response": format!("I couldn't find any notes related to '{}'. Try creating some notes first, then reindex your vault.", message),
+            "sources": [],
+            "tool_calls": []
+        }));
+    }
+
+    // Build context from search results
+    let context: Vec<String> = results
+        .iter()
+        .map(|r| format!("**{}** ({})\n{}", r.title, r.path, r.snippet))
+        .collect();
+
+    let response = format!(
+        "Based on your notes, here's what I found about '{}':\n\n{}",
+        message,
+        context.join("\n\n---\n\n")
+    );
+
+    let sources: Vec<serde_json::Value> = results
+        .iter()
+        .map(|r| {
+            serde_json::json!({
+                "path": r.path,
+                "title": r.title,
+            })
+        })
+        .collect();
+
+    Ok(serde_json::json!({
+        "response": response,
+        "sources": sources,
+        "tool_calls": ["search_notes"]
+    }))
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -472,6 +521,7 @@ pub fn run() {
             get_backlinks,
             get_graph_neighbors,
             get_graph_data,
+            chat_with_agent,
         ])
         .run(tauri::generate_context!())
         .expect("error while running VaultMind");
