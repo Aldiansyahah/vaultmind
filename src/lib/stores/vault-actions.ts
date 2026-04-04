@@ -92,3 +92,7 @@ export async function saveNoteContent(path: string, content: string): Promise<vo
     error.set(`Failed to save note: ${e}`);
   }
 }
+
+export async function set_vault_path(path: string): Promise<void> {
+  await invoke("set_vault_path", { path });
+}
