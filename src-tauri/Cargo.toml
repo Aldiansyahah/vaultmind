@@ -48,6 +48,9 @@ arrow-schema = "57"
 # HTTP (for LLM API calls)
 reqwest = { version = "0.12", features = ["json"] }
 
+# PDF extraction
+pdf-extract = "0.7"
+
 # File watching
 notify = "7"
 notify-debouncer-mini = "0.5"
