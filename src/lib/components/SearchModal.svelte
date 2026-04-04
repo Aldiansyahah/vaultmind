@@ -139,7 +139,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.7);
+    background: var(--overlay-bg);
     display: flex;
     align-items: flex-start;
     justify-content: center;
@@ -148,8 +148,8 @@
   }
 
   .search-modal {
-    background: #1a2332;
-    border: 1px solid #2d3f50;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
     border-radius: 12px;
     width: 90%;
     max-width: 600px;
@@ -162,7 +162,7 @@
     display: flex;
     align-items: center;
     padding: 1rem;
-    border-bottom: 1px solid #2d3f50;
+    border-bottom: 1px solid var(--border-color);
   }
 
   .search-icon {
@@ -175,17 +175,17 @@
     background: transparent;
     border: none;
     outline: none;
-    color: #e7e9ea;
+    color: var(--text-primary);
     font-size: 1rem;
   }
 
   .search-input-wrapper input::placeholder {
-    color: #556677;
+    color: var(--text-tertiary);
   }
 
   .shortcut-hint {
-    background: #2d3f50;
-    color: #8899a6;
+    background: var(--hover-bg);
+    color: var(--text-secondary);
     padding: 0.2rem 0.5rem;
     border-radius: 4px;
     font-size: 0.7rem;
@@ -195,7 +195,7 @@
   .loading {
     padding: 2rem;
     text-align: center;
-    color: #8899a6;
+    color: var(--text-secondary);
   }
 
   .results {
@@ -212,23 +212,23 @@
     text-align: left;
     cursor: pointer;
     transition: background 0.1s;
-    border-bottom: 1px solid #2d3f50;
+    border-bottom: 1px solid var(--border-color);
   }
 
   .result-item:hover,
   .result-item.selected {
-    background: #2d3f50;
+    background: var(--hover-bg);
   }
 
   .result-title {
     font-weight: 600;
-    color: #e7e9ea;
+    color: var(--text-primary);
     margin-bottom: 0.25rem;
   }
 
   .result-snippet {
     font-size: 0.85rem;
-    color: #8899a6;
+    color: var(--text-secondary);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -236,7 +236,7 @@
 
   .result-path {
     font-size: 0.75rem;
-    color: #556677;
+    color: var(--text-tertiary);
     font-family: monospace;
     margin-top: 0.25rem;
   }
@@ -244,6 +244,6 @@
   .no-results {
     padding: 2rem;
     text-align: center;
-    color: #556677;
+    color: var(--text-tertiary);
   }
 </style>

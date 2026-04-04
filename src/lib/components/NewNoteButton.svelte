@@ -60,7 +60,7 @@
   .new-note-btn {
     width: 100%;
     padding: 0.5rem;
-    background: #2e86c1;
+    background: var(--accent-color);
     color: #fff;
     border: none;
     border-radius: 6px;
@@ -71,7 +71,7 @@
   }
 
   .new-note-btn:hover {
-    background: #2471a3;
+    background: var(--accent-hover);
   }
 
   .modal-overlay {
@@ -80,7 +80,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.6);
+    background: var(--overlay-bg);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -88,8 +88,8 @@
   }
 
   .modal {
-    background: #1a2332;
-    border: 1px solid #2d3f50;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
     border-radius: 12px;
     padding: 1.5rem;
     min-width: 320px;
@@ -97,28 +97,28 @@
 
   .modal h3 {
     margin: 0 0 1rem;
-    color: #e7e9ea;
+    color: var(--text-primary);
     font-size: 1rem;
   }
 
   .modal input {
     width: 100%;
     padding: 0.5rem;
-    background: #0f1419;
-    border: 1px solid #2d3f50;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
     border-radius: 6px;
-    color: #e7e9ea;
+    color: var(--text-primary);
     font-size: 0.9rem;
     outline: none;
     box-sizing: border-box;
   }
 
   .modal input:focus {
-    border-color: #2e86c1;
+    border-color: var(--accent-color);
   }
 
   .error {
-    color: #e74c3c;
+    color: var(--error-color);
     font-size: 0.8rem;
     margin: 0.5rem 0 0;
   }
@@ -133,20 +133,20 @@
   .cancel-btn {
     padding: 0.4rem 1rem;
     background: transparent;
-    border: 1px solid #2d3f50;
-    color: #8899a6;
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
     border-radius: 6px;
     cursor: pointer;
     font-size: 0.85rem;
   }
 
   .cancel-btn:hover {
-    background: #2d3f50;
+    background: var(--hover-bg);
   }
 
   .create-btn {
     padding: 0.4rem 1rem;
-    background: #2e86c1;
+    background: var(--accent-color);
     border: none;
     color: #fff;
     border-radius: 6px;
@@ -156,6 +156,6 @@
   }
 
   .create-btn:hover {
-    background: #2471a3;
+    background: var(--accent-hover);
   }
 </style>

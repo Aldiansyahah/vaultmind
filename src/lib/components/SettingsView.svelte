@@ -2,6 +2,7 @@
   import { settings } from "$lib/stores/settings";
   import { createEventDispatcher } from "svelte";
   import { set_vault_path } from "$lib/stores/vault-actions";
+  import { open } from "@tauri-apps/plugin-dialog";
 
   const dispatch = createEventDispatcher();
 
@@ -33,6 +34,23 @@
     }
   }
 
+  async function browseFolder() {
+    try {
+      const selected = await open({
+        directory: true,
+        multiple: false,
+        title: "Select Vault Folder",
+      });
+      if (selected) {
+        localVaultPath = selected as string;
+        await updateVaultPath();
+      }
+    } catch {
+      saveStatus = "error";
+      setTimeout(() => (saveStatus = "idle"), 3000);
+    }
+  }
+
   function close() {
     dispatch("close");
   }
@@ -49,8 +67,9 @@
       <h3>Vault Path</h3>
       <div class="input-row">
         <input type="text" bind:value={localVaultPath} placeholder="/path/to/vault" />
-        <button onclick={updateVaultPath}>Set</button>
+        <button class="btn-primary" onclick={updateVaultPath}>Set</button>
       </div>
+      <button class="btn-browse" onclick={browseFolder}>Browse...</button>
       {#if $settings.vaultPath}
         <p class="current-value">Current: {$settings.vaultPath}</p>
       {/if}
@@ -93,8 +112,8 @@
 
 <style>
   .settings-panel {
-    background: #1a2332;
-    border-left: 1px solid #2d3f50;
+    background: var(--bg-secondary);
+    border-left: 1px solid var(--border-color);
     width: 320px;
     height: 100%;
     display: flex;
@@ -106,7 +125,7 @@
     align-items: center;
     justify-content: space-between;
     padding: 1rem;
-    border-bottom: 1px solid #2d3f50;
+    border-bottom: 1px solid var(--border-color);
   }
 
   .settings-header h2 {
@@ -118,14 +137,14 @@
   .close-btn {
     background: none;
     border: none;
-    color: #8899a6;
+    color: var(--text-secondary);
     cursor: pointer;
     font-size: 1.1rem;
     padding: 0.25rem;
   }
 
   .close-btn:hover {
-    color: #e7e9ea;
+    color: var(--text-primary);
   }
 
   .settings-content {
@@ -143,7 +162,7 @@
     font-size: 0.85rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: #8899a6;
+    color: var(--text-secondary);
   }
 
   .input-row {
@@ -154,22 +173,22 @@
   .input-row input {
     flex: 1;
     padding: 0.5rem;
-    background: #0f1419;
-    border: 1px solid #2d3f50;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
     border-radius: 6px;
-    color: #e7e9ea;
+    color: var(--text-primary);
     font-size: 0.85rem;
     outline: none;
     box-sizing: border-box;
   }
 
   .input-row input:focus {
-    border-color: #2e86c1;
+    border-color: var(--accent-color);
   }
 
-  .input-row button {
+  .btn-primary {
     padding: 0.5rem 1rem;
-    background: #2e86c1;
+    background: var(--accent-color);
     border: none;
     color: #fff;
     border-radius: 6px;
@@ -178,14 +197,32 @@
     font-weight: 600;
   }
 
-  .input-row button:hover {
-    background: #2471a3;
+  .btn-primary:hover {
+    background: var(--accent-hover);
+  }
+
+  .btn-browse {
+    width: 100%;
+    margin-top: 0.5rem;
+    padding: 0.5rem;
+    background: var(--bg-primary);
+    border: 1px dashed var(--border-color);
+    border-radius: 6px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: all 0.15s;
+  }
+
+  .btn-browse:hover {
+    border-color: var(--accent-color);
+    color: var(--accent-color);
   }
 
   .current-value {
     margin: 0.5rem 0 0;
     font-size: 0.8rem;
-    color: #556677;
+    color: var(--text-tertiary);
     font-family: monospace;
   }
 
@@ -197,18 +234,18 @@
   .theme-toggle button {
     flex: 1;
     padding: 0.5rem;
-    background: #0f1419;
-    border: 1px solid #2d3f50;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
     border-radius: 6px;
-    color: #e7e9ea;
+    color: var(--text-primary);
     cursor: pointer;
     font-size: 0.85rem;
     transition: all 0.15s;
   }
 
   .theme-toggle button.active {
-    background: #2e86c1;
-    border-color: #2e86c1;
+    background: var(--accent-color);
+    border-color: var(--accent-color);
     color: #fff;
   }
 
@@ -226,7 +263,7 @@
     min-width: 3rem;
     text-align: right;
     font-family: monospace;
-    color: #8899a6;
+    color: var(--text-secondary);
   }
 
   .status {
@@ -237,12 +274,12 @@
   }
 
   .status.saved {
-    background: #1a3a1a;
-    color: #27ae60;
+    background: var(--success-bg);
+    color: var(--success-color);
   }
 
   .status.error {
-    background: #3a1a1a;
-    color: #e74c3c;
+    background: var(--error-bg);
+    color: var(--error-color);
   }
 </style>

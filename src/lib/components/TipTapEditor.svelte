@@ -320,7 +320,7 @@
     display: flex;
     flex-direction: column;
     height: 100%;
-    background: #0f1419;
+    background: var(--bg-primary);
   }
 
   .loading {
@@ -328,7 +328,7 @@
     align-items: center;
     justify-content: center;
     height: 100%;
-    color: #8899a6;
+    color: var(--text-secondary);
   }
 
   .editor-wrapper {
@@ -340,7 +340,7 @@
   .editor-wrapper .ProseMirror {
     outline: none;
     min-height: 100%;
-    color: #e7e9ea;
+    color: var(--text-primary);
     font-size: 0.95rem;
     line-height: 1.6;
   }
@@ -369,7 +369,7 @@
   }
 
   .editor-wrapper .ProseMirror code {
-    background: #1a2332;
+    background: var(--bg-secondary);
     padding: 0.2em 0.4em;
     border-radius: 3px;
     font-family: "JetBrains Mono", "Fira Code", monospace;
@@ -377,7 +377,7 @@
   }
 
   .editor-wrapper .ProseMirror pre {
-    background: #1a2332;
+    background: var(--bg-secondary);
     padding: 1rem;
     border-radius: 6px;
     overflow-x: auto;
@@ -389,10 +389,10 @@
   }
 
   .editor-wrapper .ProseMirror blockquote {
-    border-left: 3px solid #2e86c1;
+    border-left: 3px solid var(--accent-color);
     padding-left: 1rem;
     margin: 0.5rem 0;
-    color: #8899a6;
+    color: var(--text-secondary);
   }
 
   .editor-wrapper .ProseMirror ul,
@@ -402,19 +402,19 @@
   }
 
   .editor-wrapper .ProseMirror a {
-    color: #2e86c1;
+    color: var(--accent-color);
     text-decoration: underline;
   }
 
   .editor-wrapper .ProseMirror .wikilink {
-    color: #2e86c1;
+    color: var(--accent-color);
     cursor: pointer;
     text-decoration: underline;
     text-decoration-style: dashed;
   }
 
   .editor-wrapper .ProseMirror .wikilink:hover {
-    color: #2471a3;
+    color: var(--accent-hover);
   }
 
   .placeholder {
@@ -422,7 +422,7 @@
     align-items: center;
     justify-content: center;
     height: 100%;
-    color: #556677;
+    color: var(--text-tertiary);
     text-align: center;
   }
 </style>

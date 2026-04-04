@@ -20,15 +20,15 @@
     display: flex;
     flex-direction: column;
     height: 100%;
-    background: #0f1419;
+    background: var(--bg-primary);
   }
 
   .editor-header {
     padding: 0.5rem 1rem;
-    background: #1a2332;
-    border-bottom: 1px solid #2d3f50;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-color);
     font-size: 0.8rem;
-    color: #8899a6;
+    color: var(--text-secondary);
   }
 
   .path {
@@ -37,9 +37,9 @@
 
   .error-bar {
     padding: 0.5rem 1rem;
-    background: #2d1a1a;
-    color: #e74c3c;
+    background: var(--error-bg);
+    color: var(--error-color);
     font-size: 0.85rem;
-    border-top: 1px solid #4a2020;
+    border-top: 1px solid var(--error-color);
   }
 </style>

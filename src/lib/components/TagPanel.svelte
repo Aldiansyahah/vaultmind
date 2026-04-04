@@ -41,7 +41,7 @@
 
 <style>
   .tag-panel {
-    border-top: 1px solid #2d3f50;
+    border-top: 1px solid var(--border-color);
   }
 
   .tag-panel-header {
@@ -53,20 +53,20 @@
     font-size: 0.8rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: #8899a6;
+    color: var(--text-secondary);
   }
 
   .clear-btn {
     background: none;
     border: none;
-    color: #8899a6;
+    color: var(--text-secondary);
     cursor: pointer;
     font-size: 0.85rem;
     padding: 0.15rem;
   }
 
   .clear-btn:hover {
-    color: #e7e9ea;
+    color: var(--text-primary);
   }
 
   .tag-list {
@@ -83,29 +83,29 @@
     align-items: center;
     gap: 0.3rem;
     padding: 0.25rem 0.6rem;
-    background: #1a2332;
-    border: 1px solid #2d3f50;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
     border-radius: 12px;
-    color: #27ae60;
+    color: var(--success-color);
     cursor: pointer;
     font-size: 0.8rem;
     transition: all 0.15s;
   }
 
   .tag-chip:hover {
-    background: #2d3f50;
+    background: var(--hover-bg);
   }
 
   .tag-chip.active {
-    background: #27ae60;
-    border-color: #27ae60;
+    background: var(--success-color);
+    border-color: var(--success-color);
     color: #fff;
   }
 
   .count {
     font-size: 0.7rem;
-    color: #8899a6;
-    background: #0f1419;
+    color: var(--text-secondary);
+    background: var(--bg-primary);
     padding: 0.1rem 0.35rem;
     border-radius: 8px;
     min-width: 1.2rem;
@@ -119,7 +119,7 @@
 
   .empty {
     padding: 0.5rem;
-    color: #556677;
+    color: var(--text-tertiary);
     font-size: 0.8rem;
   }
 </style>

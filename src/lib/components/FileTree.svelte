@@ -52,16 +52,16 @@
     padding: 0.35rem 1rem;
     cursor: pointer;
     font-size: 0.9rem;
-    color: #e7e9ea;
+    color: var(--text-primary);
     transition: background 0.15s;
   }
 
   .entry:hover {
-    background: #2d3f50;
+    background: var(--hover-bg);
   }
 
   .entry.selected {
-    background: #2e86c1;
+    background: var(--accent-color);
     color: #fff;
   }
 
@@ -87,7 +87,7 @@
   .empty {
     padding: 2rem 1rem;
     text-align: center;
-    color: #556677;
+    color: var(--text-tertiary);
     font-size: 0.85rem;
   }
 </style>

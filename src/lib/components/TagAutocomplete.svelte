@@ -54,8 +54,8 @@
 <style>
   .tag-dropdown {
     position: fixed;
-    background: #1a2332;
-    border: 1px solid #2d3f50;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
     border-radius: 8px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
     max-height: 200px;
@@ -70,7 +70,7 @@
     padding: 0.4rem 0.8rem;
     background: transparent;
     border: none;
-    color: #27ae60;
+    color: var(--success-color);
     text-align: left;
     cursor: pointer;
     font-size: 0.85rem;
@@ -79,7 +79,7 @@
 
   .tag-item:hover,
   .tag-item.selected {
-    background: #27ae60;
+    background: var(--success-color);
     color: #fff;
   }
 </style>

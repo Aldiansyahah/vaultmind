@@ -33,8 +33,8 @@
     display: flex;
     flex-direction: column;
     height: 100%;
-    background: #1a2332;
-    border-right: 1px solid #2d3f50;
+    background: var(--bg-secondary);
+    border-right: 1px solid var(--border-color);
     width: 260px;
     min-width: 200px;
   }
@@ -43,7 +43,7 @@
     display: flex;
     gap: 0.5rem;
     padding: 0.75rem;
-    border-bottom: 1px solid #2d3f50;
+    border-bottom: 1px solid var(--border-color);
   }
 
   .sidebar-header > :first-child {
@@ -52,8 +52,8 @@
 
   .settings-btn {
     background: none;
-    border: 1px solid #2d3f50;
-    color: #8899a6;
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
     cursor: pointer;
     font-size: 1rem;
     padding: 0.35rem 0.5rem;
@@ -62,8 +62,8 @@
   }
 
   .settings-btn:hover {
-    background: #2d3f50;
-    color: #e7e9ea;
+    background: var(--hover-bg);
+    color: var(--text-primary);
   }
 
   .sidebar-content {

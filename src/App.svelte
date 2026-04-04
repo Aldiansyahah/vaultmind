@@ -45,19 +45,21 @@
 </div>
 
 <style>
-  :global(body) {
-    margin: 0;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    background: #0f1419;
-    color: #e7e9ea;
-  }
-
   :global([data-theme="light"]) {
     --bg-primary: #ffffff;
     --bg-secondary: #f5f5f5;
     --text-primary: #1a1a1a;
     --text-secondary: #666666;
+    --text-tertiary: #999999;
     --border-color: #e0e0e0;
+    --accent-color: #2e86c1;
+    --accent-hover: #2471a3;
+    --success-color: #27ae60;
+    --success-bg: #e8f8e8;
+    --error-color: #e74c3c;
+    --error-bg: #fde8e8;
+    --overlay-bg: rgba(0, 0, 0, 0.4);
+    --hover-bg: #eaeaea;
   }
 
   :global([data-theme="dark"]) {
@@ -65,10 +67,21 @@
     --bg-secondary: #1a2332;
     --text-primary: #e7e9ea;
     --text-secondary: #8899a6;
+    --text-tertiary: #556677;
     --border-color: #2d3f50;
+    --accent-color: #2e86c1;
+    --accent-hover: #2471a3;
+    --success-color: #27ae60;
+    --success-bg: #1a3a1a;
+    --error-color: #e74c3c;
+    --error-bg: #3a1a1a;
+    --overlay-bg: rgba(0, 0, 0, 0.7);
+    --hover-bg: #2d3f50;
   }
 
   :global(body) {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     background: var(--bg-primary);
     color: var(--text-primary);
   }

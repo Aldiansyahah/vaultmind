@@ -58,8 +58,8 @@
 <style>
   .autocomplete-dropdown {
     position: fixed;
-    background: #1a2332;
-    border: 1px solid #2d3f50;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
     border-radius: 8px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
     max-height: 200px;
@@ -74,7 +74,7 @@
     padding: 0.5rem 1rem;
     background: transparent;
     border: none;
-    color: #e7e9ea;
+    color: var(--text-primary);
     text-align: left;
     cursor: pointer;
     font-size: 0.9rem;
@@ -83,7 +83,7 @@
 
   .autocomplete-item:hover,
   .autocomplete-item.selected {
-    background: #2e86c1;
+    background: var(--accent-color);
     color: #fff;
   }
 </style>
