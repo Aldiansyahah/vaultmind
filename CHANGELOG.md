@@ -47,3 +47,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Search-as-you-type with 200ms debounce and result cards (P1-08)
 - Keyboard navigation: arrow keys, Enter to select, ESC to close (P1-08)
 - Tauri IPC commands: search_notes, index_note, unindex_note (P1-08)
+- Settings panel with vault path, theme toggle, and font size (P1-09)
+- Theme switching via CSS custom properties (light/dark) (P1-09)
+- Settings persisted to localStorage (P1-09)
