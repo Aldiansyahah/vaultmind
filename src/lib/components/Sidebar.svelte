@@ -25,6 +25,14 @@
   </div>
   <div class="sidebar-actions">
     <NewNoteButton />
+    <div class="action-row">
+      <button class="action-btn" onclick={() => dispatch("open-chat")} title="AI Chat (Ctrl+J)"
+        >💬 Chat</button
+      >
+      <button class="action-btn" onclick={() => dispatch("open-graph")} title="Graph View (Ctrl+G)"
+        >🔗 Graph</button
+      >
+    </div>
   </div>
   <div class="sidebar-section-label">Notes</div>
   <div class="sidebar-content">
@@ -91,6 +99,29 @@
 
   .sidebar-actions {
     padding: 0.5rem 0.75rem;
+  }
+
+  .action-row {
+    display: flex;
+    gap: 0.4rem;
+    margin-top: 0.4rem;
+  }
+
+  .action-btn {
+    flex: 1;
+    padding: 0.35rem;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: all 0.12s;
+  }
+
+  .action-btn:hover {
+    background: var(--hover-bg);
+    color: var(--text-primary);
   }
 
   .sidebar-section-label {

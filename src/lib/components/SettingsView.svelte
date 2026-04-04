@@ -1,6 +1,7 @@
 <script lang="ts">
   import { settings } from "$lib/stores/settings";
   import { createEventDispatcher } from "svelte";
+  import { invoke } from "@tauri-apps/api/core";
   import { set_vault_path, loadVaultEntries } from "$lib/stores/vault-actions";
   import { open } from "@tauri-apps/plugin-dialog";
 
@@ -9,6 +10,8 @@
   let localVaultPath = $state($settings.vaultPath || "");
   let localFontSize = $state($settings.editorFontSize);
   let saveStatus = $state<"idle" | "saved" | "error">("idle");
+  let reindexStatus = $state<"idle" | "running" | "done">("idle");
+  let reindexResult = $state<string>("");
 
   function updateTheme(theme: "light" | "dark") {
     settings.update((s) => ({ ...s, theme }));
@@ -49,6 +52,22 @@
     } catch {
       saveStatus = "error";
       setTimeout(() => (saveStatus = "idle"), 3000);
+    }
+  }
+
+  async function triggerReindex() {
+    reindexStatus = "running";
+    reindexResult = "";
+    try {
+      const result: { indexed: number; skipped: number; errors: number } =
+        await invoke("reindex_vault");
+      reindexResult = `Indexed: ${result.indexed}, Skipped: ${result.skipped}, Errors: ${result.errors}`;
+      reindexStatus = "done";
+      setTimeout(() => (reindexStatus = "idle"), 5000);
+    } catch (e) {
+      reindexResult = `Failed: ${e}`;
+      reindexStatus = "done";
+      setTimeout(() => (reindexStatus = "idle"), 5000);
     }
   }
 
@@ -101,6 +120,20 @@
         />
         <span class="font-size-value">{localFontSize}px</span>
       </div>
+    </section>
+
+    <section class="setting-group">
+      <h3>Indexing</h3>
+      <button
+        class="btn-reindex"
+        onclick={triggerReindex}
+        disabled={reindexStatus === "running" || !$settings.vaultPath}
+      >
+        {reindexStatus === "running" ? "Indexing..." : "Reindex Vault"}
+      </button>
+      {#if reindexResult}
+        <p class="reindex-result">{reindexResult}</p>
+      {/if}
     </section>
 
     {#if saveStatus === "saved"}
@@ -265,6 +298,35 @@
     text-align: right;
     font-family: monospace;
     color: var(--text-secondary);
+  }
+
+  .btn-reindex {
+    width: 100%;
+    padding: 0.5rem;
+    background: var(--accent-color);
+    border: none;
+    color: #fff;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 600;
+    transition: all 0.15s;
+  }
+
+  .btn-reindex:hover:not(:disabled) {
+    background: var(--accent-hover);
+  }
+
+  .btn-reindex:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .reindex-result {
+    margin: 0.5rem 0 0;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    font-family: monospace;
   }
 
   .status {

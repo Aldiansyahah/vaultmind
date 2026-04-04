@@ -4,15 +4,34 @@
   import NoteEditor from "$lib/components/NoteEditor.svelte";
   import SearchModal from "$lib/components/SearchModal.svelte";
   import SettingsView from "$lib/components/SettingsView.svelte";
+  import ChatPanel from "$lib/components/ChatPanel.svelte";
+  import GraphView from "$lib/components/GraphView.svelte";
   import { openNote } from "$lib/stores/vault-actions";
 
   let showSearch = $state(false);
   let showSettings = $state(false);
+  let showChat = $state(false);
+  let activeView = $state<"editor" | "graph">("editor");
 
   function handleKeydown(e: KeyboardEvent) {
     if ((e.ctrlKey || e.metaKey) && e.key === "k") {
       e.preventDefault();
       showSearch = !showSearch;
+    }
+    if ((e.ctrlKey || e.metaKey) && e.key === "j") {
+      e.preventDefault();
+      showChat = !showChat;
+    }
+    if ((e.ctrlKey || e.metaKey) && e.key === "g") {
+      e.preventDefault();
+      activeView = activeView === "graph" ? "editor" : "graph";
+    }
+  }
+
+  function handleOpenNote(e: CustomEvent) {
+    if (e.detail && e.detail.path) {
+      openNote(e.detail.path);
+      activeView = "editor";
     }
   }
 
@@ -30,10 +49,21 @@
 </script>
 
 <div class="app">
-  <Sidebar on:open-settings={() => (showSettings = true)} />
+  <Sidebar
+    on:open-settings={() => (showSettings = true)}
+    on:open-chat={() => (showChat = !showChat)}
+    on:open-graph={() => (activeView = activeView === "graph" ? "editor" : "graph")}
+  />
   <main class="main-content">
-    <NoteEditor />
+    {#if activeView === "graph"}
+      <GraphView on:close={() => (activeView = "editor")} on:open-note={handleOpenNote} />
+    {:else}
+      <NoteEditor />
+    {/if}
   </main>
+  {#if showChat}
+    <ChatPanel on:close={() => (showChat = false)} on:open-note={handleOpenNote} />
+  {/if}
   <SearchModal
     visible={showSearch}
     on:select={handleSearchSelect}
