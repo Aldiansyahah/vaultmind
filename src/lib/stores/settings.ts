@@ -1,15 +1,27 @@
 import { writable } from "svelte/store";
 
+export interface LlmConfig {
+  baseUrl: string;
+  apiKey: string;
+  model: string;
+}
+
 export interface AppSettings {
   vaultPath: string | null;
   theme: "light" | "dark";
   editorFontSize: number;
+  llm: LlmConfig;
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
   vaultPath: null,
   theme: "dark",
   editorFontSize: 16,
+  llm: {
+    baseUrl: "",
+    apiKey: "",
+    model: "",
+  },
 };
 
 function loadSettings(): AppSettings {
