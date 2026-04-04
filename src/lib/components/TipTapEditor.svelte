@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { onDestroy } from "svelte";
   import { Editor } from "@tiptap/core";
   import StarterKit from "@tiptap/starter-kit";
   import Link from "@tiptap/extension-link";
@@ -9,7 +9,7 @@
   import TagAutocomplete from "$lib/components/TagAutocomplete.svelte";
 
   let editor: Editor | null = null;
-  let container: HTMLElement | null = null;
+  let container = $state<HTMLElement | null>(null);
   let saveTimeout: ReturnType<typeof setTimeout> | null = null;
   let isInternalUpdate = false;
 
@@ -229,9 +229,10 @@
     showAutocomplete = false;
   }
 
-  onMount(() => {
+  function createEditor(el: HTMLElement) {
+    editor?.destroy();
     editor = new Editor({
-      element: container!,
+      element: el,
       extensions: [
         StarterKit.configure({
           heading: { levels: [1, 2, 3] },
@@ -257,11 +258,21 @@
         checkForAutocompleteTrigger();
       },
     });
+  }
 
+  $effect(() => {
+    if (container) {
+      createEditor(container);
+    }
     return () => {
       editor?.destroy();
       editor = null;
     };
+  });
+
+  onDestroy(() => {
+    editor?.destroy();
+    editor = null;
   });
 
   $effect(() => {
@@ -337,7 +348,7 @@
     padding: 1rem;
   }
 
-  .editor-wrapper .ProseMirror {
+  .editor-wrapper :global(.ProseMirror) {
     outline: none;
     min-height: 100%;
     color: var(--text-primary);
@@ -345,30 +356,30 @@
     line-height: 1.6;
   }
 
-  .editor-wrapper .ProseMirror p {
+  .editor-wrapper :global(.ProseMirror p) {
     margin: 0.5rem 0;
   }
 
-  .editor-wrapper .ProseMirror h1,
-  .editor-wrapper .ProseMirror h2,
-  .editor-wrapper .ProseMirror h3 {
+  .editor-wrapper :global(.ProseMirror h1),
+  .editor-wrapper :global(.ProseMirror h2),
+  .editor-wrapper :global(.ProseMirror h3) {
     margin: 1rem 0 0.5rem;
     font-weight: 600;
   }
 
-  .editor-wrapper .ProseMirror h1 {
+  .editor-wrapper :global(.ProseMirror h1) {
     font-size: 1.75rem;
   }
 
-  .editor-wrapper .ProseMirror h2 {
+  .editor-wrapper :global(.ProseMirror h2) {
     font-size: 1.4rem;
   }
 
-  .editor-wrapper .ProseMirror h3 {
+  .editor-wrapper :global(.ProseMirror h3) {
     font-size: 1.15rem;
   }
 
-  .editor-wrapper .ProseMirror code {
+  .editor-wrapper :global(.ProseMirror code) {
     background: var(--bg-secondary);
     padding: 0.2em 0.4em;
     border-radius: 3px;
@@ -376,44 +387,44 @@
     font-size: 0.9em;
   }
 
-  .editor-wrapper .ProseMirror pre {
+  .editor-wrapper :global(.ProseMirror pre) {
     background: var(--bg-secondary);
     padding: 1rem;
     border-radius: 6px;
     overflow-x: auto;
   }
 
-  .editor-wrapper .ProseMirror pre code {
+  .editor-wrapper :global(.ProseMirror pre code) {
     background: none;
     padding: 0;
   }
 
-  .editor-wrapper .ProseMirror blockquote {
+  .editor-wrapper :global(.ProseMirror blockquote) {
     border-left: 3px solid var(--accent-color);
     padding-left: 1rem;
     margin: 0.5rem 0;
     color: var(--text-secondary);
   }
 
-  .editor-wrapper .ProseMirror ul,
-  .editor-wrapper .ProseMirror ol {
+  .editor-wrapper :global(.ProseMirror ul),
+  .editor-wrapper :global(.ProseMirror ol) {
     padding-left: 1.5rem;
     margin: 0.5rem 0;
   }
 
-  .editor-wrapper .ProseMirror a {
+  .editor-wrapper :global(.ProseMirror a) {
     color: var(--accent-color);
     text-decoration: underline;
   }
 
-  .editor-wrapper .ProseMirror .wikilink {
+  .editor-wrapper :global(.ProseMirror .wikilink) {
     color: var(--accent-color);
     cursor: pointer;
     text-decoration: underline;
     text-decoration-style: dashed;
   }
 
-  .editor-wrapper .ProseMirror .wikilink:hover {
+  .editor-wrapper :global(.ProseMirror .wikilink:hover) {
     color: var(--accent-hover);
   }
 
