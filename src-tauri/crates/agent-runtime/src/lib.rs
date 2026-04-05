@@ -4,6 +4,8 @@
 //! Multi-agent orchestration with heartbeats, tasks, and org hierarchy.
 
 pub mod agent;
+pub mod audit;
+pub mod budget;
 pub mod client;
 pub mod heartbeat;
 pub mod orchestrator;
@@ -12,6 +14,8 @@ pub mod tasks;
 pub mod tools;
 
 pub use agent::{Agent, AgentResponse, ToolExecutor};
+pub use audit::{AuditAction, AuditEntry, AuditLog};
+pub use budget::{BudgetCheckResult, BudgetLimit, BudgetManager, BudgetSummary, BudgetUsage};
 pub use client::{LlmClient, LlmConfig, Message};
 pub use heartbeat::{AgentState, AgentStatusInfo, HeartbeatMonitor};
 pub use orchestrator::{AgentOrchestrator, DashboardData, TaskInfo};
