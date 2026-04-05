@@ -11,6 +11,7 @@ use std::sync::Mutex;
 use core_storage::{Database, VaultEntry};
 use graph_engine::KnowledgeGraph;
 use indexer::IndexingPipeline;
+use agent_runtime::AgentOrchestrator;
 use retriever::{SearchIndex, SearchResult};
 use rusqlite::Connection;
 
@@ -20,6 +21,7 @@ struct AppState {
     search_index: Mutex<Option<SearchIndex>>,
     pipeline: Mutex<Option<IndexingPipeline>>,
     graph: Mutex<Option<KnowledgeGraph>>,
+    orchestrator: Mutex<AgentOrchestrator>,
 }
 
 /// Tauri IPC command: Get application version
@@ -608,6 +610,120 @@ fn search_fallback_response(
     })
 }
 
+// --- Agent Orchestration IPC Commands ---
+
+/// Register a new agent in the orchestrator.
+#[tauri::command]
+fn register_agent(
+    id: String,
+    name: String,
+    role: String,
+    system_prompt: String,
+    parent_id: Option<String>,
+    allowed_tools: Vec<String>,
+    state: tauri::State<AppState>,
+) -> Result<(), String> {
+    let agent_role = match role.as_str() {
+        "supervisor" => agent_runtime::AgentRole::Supervisor,
+        "lead" => agent_runtime::AgentRole::Lead,
+        _ => agent_runtime::AgentRole::Executor,
+    };
+
+    let def = agent_runtime::AgentDef {
+        id,
+        name,
+        role: agent_role,
+        persona: agent_runtime::AgentPersona::default(),
+        skills: vec![],
+        system_prompt,
+        llm_config: agent_runtime::LlmConfig::default(),
+        allowed_tools,
+        parent_id,
+        supervises: vec![],
+        max_concurrent_tasks: 1,
+        enabled: true,
+    };
+
+    state.orchestrator.lock().map_err(|e| e.to_string())?
+        .register_agent(def);
+    Ok(())
+}
+
+/// List all registered agents.
+#[tauri::command]
+fn list_agents(state: tauri::State<AppState>) -> Result<serde_json::Value, String> {
+    let orch = state.orchestrator.lock().map_err(|e| e.to_string())?;
+    let agents: Vec<serde_json::Value> = orch.registry.list().iter().map(|a| {
+        serde_json::json!({
+            "id": a.id,
+            "name": a.name,
+            "role": format!("{:?}", a.role),
+            "enabled": a.enabled,
+            "parent_id": a.parent_id,
+        })
+    }).collect();
+    Ok(serde_json::json!(agents))
+}
+
+/// Get the orchestrator dashboard.
+#[tauri::command]
+fn get_dashboard(state: tauri::State<AppState>) -> Result<serde_json::Value, String> {
+    let orch = state.orchestrator.lock().map_err(|e| e.to_string())?;
+    let dash = orch.get_dashboard();
+    serde_json::to_value(dash).map_err(|e| e.to_string())
+}
+
+/// Get agent org chart hierarchy.
+#[tauri::command]
+fn get_agent_hierarchy(state: tauri::State<AppState>) -> Result<serde_json::Value, String> {
+    let orch = state.orchestrator.lock().map_err(|e| e.to_string())?;
+    let chart = orch.get_org_chart();
+    serde_json::to_value(chart).map_err(|e| e.to_string())
+}
+
+/// Submit a task to an agent.
+#[tauri::command]
+fn submit_task(
+    agent_id: String,
+    prompt: String,
+    state: tauri::State<AppState>,
+) -> Result<String, String> {
+    let mut orch = state.orchestrator.lock().map_err(|e| e.to_string())?;
+    orch.submit_task(&agent_id, &prompt, agent_runtime::TaskSchedule::Once)
+}
+
+/// List tasks, optionally filtered by agent.
+#[tauri::command]
+fn list_tasks(
+    agent_id: Option<String>,
+    state: tauri::State<AppState>,
+) -> Result<serde_json::Value, String> {
+    let orch = state.orchestrator.lock().map_err(|e| e.to_string())?;
+    let tasks = orch.list_tasks(agent_id.as_deref());
+    serde_json::to_value(tasks).map_err(|e| e.to_string())
+}
+
+/// Extract content from a PDF or CSV file for viewing.
+#[tauri::command]
+fn extract_file_content(
+    file_path: String,
+    state: tauri::State<AppState>,
+) -> Result<serde_json::Value, String> {
+    let vault_path = state.vault_path.lock().map_err(|e| e.to_string())?
+        .clone().ok_or("Vault path not set")?;
+
+    let full_path = vault_path.join(&file_path);
+    let content = indexer::extract_content(&full_path)
+        .map_err(|e| e.to_string())?;
+
+    Ok(serde_json::json!({
+        "text": content.text,
+        "file_type": format!("{:?}", content.file_type),
+        "metadata": content.metadata,
+        "source_path": content.source_path,
+    }))
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -619,6 +735,7 @@ pub fn run() {
             search_index: Mutex::new(None),
             pipeline: Mutex::new(None),
             graph: Mutex::new(None),
+            orchestrator: Mutex::new(AgentOrchestrator::new()),
         })
         .invoke_handler(tauri::generate_handler![
             get_version,
@@ -646,6 +763,13 @@ pub fn run() {
             get_graph_neighbors,
             get_graph_data,
             chat_with_agent,
+            register_agent,
+            list_agents,
+            get_dashboard,
+            get_agent_hierarchy,
+            submit_task,
+            list_tasks,
+            extract_file_content,
         ])
         .run(tauri::generate_context!())
         .expect("error while running VaultMind");
