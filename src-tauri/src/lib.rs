@@ -11,7 +11,7 @@ use std::sync::Mutex;
 use core_storage::{Database, VaultEntry};
 use graph_engine::KnowledgeGraph;
 use indexer::IndexingPipeline;
-use agent_runtime::AgentOrchestrator;
+use agent_runtime::{AgentOrchestrator, TeamChat};
 use retriever::{SearchIndex, SearchResult};
 use rusqlite::Connection;
 
@@ -22,6 +22,7 @@ struct AppState {
     pipeline: Mutex<Option<IndexingPipeline>>,
     graph: Mutex<Option<KnowledgeGraph>>,
     orchestrator: Mutex<AgentOrchestrator>,
+    team_chat: Mutex<TeamChat>,
 }
 
 /// Tauri IPC command: Get application version
@@ -703,6 +704,113 @@ fn list_tasks(
     serde_json::to_value(tasks).map_err(|e| e.to_string())
 }
 
+// --- Team Chat IPC Commands ---
+
+/// Create a chat channel.
+#[tauri::command]
+fn create_chat_channel(
+    id: String,
+    name: String,
+    description: String,
+    agent_members: Vec<String>,
+    state: tauri::State<AppState>,
+) -> Result<serde_json::Value, String> {
+    let mut chat = state.team_chat.lock().map_err(|e| e.to_string())?;
+    let channel = chat.create_channel(&id, &name, &description, agent_members);
+    serde_json::to_value(channel).map_err(|e| e.to_string())
+}
+
+/// List all chat channels.
+#[tauri::command]
+fn list_chat_channels(state: tauri::State<AppState>) -> Result<serde_json::Value, String> {
+    let chat = state.team_chat.lock().map_err(|e| e.to_string())?;
+    let channels: Vec<_> = chat.list_channels();
+    serde_json::to_value(channels).map_err(|e| e.to_string())
+}
+
+/// Send a user message to a channel.
+#[tauri::command]
+fn send_chat_message(
+    channel_id: String,
+    content: String,
+    state: tauri::State<AppState>,
+) -> Result<serde_json::Value, String> {
+    let mut chat = state.team_chat.lock().map_err(|e| e.to_string())?;
+    let msg = chat.send_user_message(&channel_id, &content)
+        .ok_or("Channel not found")?;
+    serde_json::to_value(msg).map_err(|e| e.to_string())
+}
+
+/// Get messages from a channel.
+#[tauri::command]
+fn get_chat_messages(
+    channel_id: String,
+    limit: usize,
+    state: tauri::State<AppState>,
+) -> Result<serde_json::Value, String> {
+    let chat = state.team_chat.lock().map_err(|e| e.to_string())?;
+    let msgs: Vec<_> = chat.get_messages(&channel_id, limit);
+    serde_json::to_value(msgs).map_err(|e| e.to_string())
+}
+
+/// Get pending agent responses and process them.
+#[tauri::command]
+fn process_chat_responses(
+    state: tauri::State<AppState>,
+) -> Result<serde_json::Value, String> {
+    let mut chat = state.team_chat.lock().map_err(|e| e.to_string())?;
+    let pending = chat.take_pending_responses();
+
+    // For each pending response, use search-based fallback
+    // (real LLM integration would go through orchestrator)
+    let search_guard = state.search_index.lock().map_err(|e| e.to_string())?;
+
+    let mut responses = Vec::new();
+    for p in &pending {
+        // Get the trigger message
+        let trigger_content = chat.get_messages(&p.channel_id, 50)
+            .iter()
+            .find(|m| m.id == p.trigger_message_id)
+            .map(|m| m.content.clone())
+            .unwrap_or_default();
+
+        // Search for relevant notes
+        let reply = if let Some(search) = search_guard.as_ref() {
+            let results = search.search(&trigger_content, 3).unwrap_or_default();
+            if results.is_empty() {
+                "I couldn't find relevant notes for that query.".to_string()
+            } else {
+                let context: Vec<String> = results.iter()
+                    .map(|r| format!("- **{}**: {}", r.title, r.snippet))
+                    .collect();
+                format!("Here's what I found:\n\n{}", context.join("\n"))
+            }
+        } else {
+            "Search index not available.".into()
+        };
+
+        chat.send_agent_message(&p.channel_id, &p.agent_id, &reply, Some(p.trigger_message_id));
+        responses.push(serde_json::json!({
+            "agent_id": p.agent_id,
+            "channel_id": p.channel_id,
+            "reply": reply,
+        }));
+    }
+
+    Ok(serde_json::json!(responses))
+}
+
+/// Add agent to channel.
+#[tauri::command]
+fn add_agent_to_chat_channel(
+    channel_id: String,
+    agent_id: String,
+    state: tauri::State<AppState>,
+) -> Result<bool, String> {
+    let mut chat = state.team_chat.lock().map_err(|e| e.to_string())?;
+    Ok(chat.add_agent_to_channel(&channel_id, &agent_id))
+}
+
 /// Extract content from a PDF or CSV file for viewing.
 #[tauri::command]
 fn extract_file_content(
@@ -736,6 +844,7 @@ pub fn run() {
             pipeline: Mutex::new(None),
             graph: Mutex::new(None),
             orchestrator: Mutex::new(AgentOrchestrator::new()),
+            team_chat: Mutex::new(TeamChat::new()),
         })
         .invoke_handler(tauri::generate_handler![
             get_version,
@@ -770,6 +879,12 @@ pub fn run() {
             submit_task,
             list_tasks,
             extract_file_content,
+            create_chat_channel,
+            list_chat_channels,
+            send_chat_message,
+            get_chat_messages,
+            process_chat_responses,
+            add_agent_to_chat_channel,
         ])
         .run(tauri::generate_context!())
         .expect("error while running VaultMind");
