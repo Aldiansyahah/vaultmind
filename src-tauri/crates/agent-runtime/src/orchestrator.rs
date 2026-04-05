@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::agent::Agent;
 use crate::heartbeat::{AgentState, AgentStatusInfo, HeartbeatMonitor};
-use crate::registry::{AgentDef, AgentRegistry, OrgNode};
+use crate::registry::{AgentDef, AgentRegistry, AgentRole, OrgNode};
 use crate::tasks::{TaskQueue, TaskSchedule, TaskStatus};
 use crate::ToolExecutor;
 
@@ -107,7 +107,7 @@ impl AgentOrchestrator {
 
         let agent = Agent::new(config);
         let full_prompt = format!(
-            "Your role: {}\n\n{}",
+            "Your role: {:?}\n\n{}",
             agent_def.role, prompt
         );
 
@@ -167,6 +167,53 @@ impl AgentOrchestrator {
         }
     }
 
+    /// Submits a review task — a supervisor reviews an executor's output.
+    pub fn submit_review(
+        &mut self,
+        supervisor_id: &str,
+        original_task_id: &str,
+    ) -> Result<String, String> {
+        let sup = self
+            .registry
+            .get(supervisor_id)
+            .ok_or("Supervisor not found")?;
+        if sup.role == AgentRole::Executor {
+            return Err("Agent is not a supervisor".into());
+        }
+
+        let original = self.tasks.get(original_task_id).ok_or("Original task not found")?;
+        if original.status != TaskStatus::Completed {
+            return Err("Can only review completed tasks".into());
+        }
+
+        let review_prompt = format!(
+            "Review the following work output and provide feedback:\n\nOriginal task: {}\n\nResult:\n{}",
+            original.prompt,
+            original.result.as_deref().unwrap_or("(no result)")
+        );
+
+        self.submit_task(supervisor_id, &review_prompt, TaskSchedule::Once)
+    }
+
+    /// Gets the review chain for a task (original → reviews).
+    pub fn get_review_chain(&self, task_id: &str) -> Vec<TaskInfo> {
+        // Find tasks that reference this task in their prompt
+        self.tasks
+            .list_all()
+            .into_iter()
+            .filter(|t| t.prompt.contains(task_id) || t.id == task_id)
+            .map(|t| TaskInfo {
+                id: t.id.clone(),
+                agent_id: t.agent_id.clone(),
+                prompt: t.prompt.clone(),
+                status: t.status.clone(),
+                result: t.result.clone(),
+                error: t.error.clone(),
+                run_count: t.run_count,
+            })
+            .collect()
+    }
+
     /// Lists all tasks with info.
     pub fn list_tasks(&self, agent_id: Option<&str>) -> Vec<TaskInfo> {
         let tasks = if let Some(id) = agent_id {
@@ -205,11 +252,16 @@ mod tests {
         AgentDef {
             id: id.into(),
             name: format!("Agent {id}"),
-            role: role.into(),
+            role: crate::registry::AgentRole::Executor,
+            persona: crate::registry::AgentPersona::default(),
+            skills: vec![],
             system_prompt: format!("You are a {role} agent."),
             llm_config: LlmConfig::default(),
             allowed_tools: vec!["search_notes".into()],
             parent_id: parent.map(String::from),
+            supervises: vec![],
+            max_concurrent_tasks: 1,
+            enabled: true,
         }
     }
 

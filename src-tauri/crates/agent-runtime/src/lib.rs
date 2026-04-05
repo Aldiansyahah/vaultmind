@@ -15,7 +15,7 @@ pub use agent::{Agent, AgentResponse, ToolExecutor};
 pub use client::{LlmClient, LlmConfig, Message};
 pub use heartbeat::{AgentState, AgentStatusInfo, HeartbeatMonitor};
 pub use orchestrator::{AgentOrchestrator, DashboardData, TaskInfo};
-pub use registry::{AgentDef, AgentRegistry, OrgNode};
+pub use registry::{AgentDef, AgentPersona, AgentRegistry, AgentRole, AgentSkill, OrgNode};
 pub use tasks::{Task, TaskQueue, TaskSchedule, TaskStatus};
 pub use tools::get_tool_definitions;
 

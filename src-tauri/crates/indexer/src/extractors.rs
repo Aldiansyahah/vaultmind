@@ -40,6 +40,7 @@ pub struct ExtractedContent {
 pub enum FileType {
     Markdown,
     Pdf,
+    Csv,
     Image,
     PlainText,
     Unknown,
@@ -50,6 +51,7 @@ pub fn detect_file_type(path: &Path) -> FileType {
     match path.extension().and_then(|e| e.to_str()) {
         Some("md" | "markdown") => FileType::Markdown,
         Some("pdf") => FileType::Pdf,
+        Some("csv" | "tsv") => FileType::Csv,
         Some("png" | "jpg" | "jpeg" | "gif" | "webp" | "svg") => FileType::Image,
         Some("txt" | "text") => FileType::PlainText,
         _ => FileType::Unknown,
@@ -113,10 +115,51 @@ pub fn extract_plain_text(path: &Path) -> Result<ExtractedContent> {
     })
 }
 
+/// Extracts and parses a CSV file into structured data.
+pub fn extract_csv(path: &Path) -> Result<ExtractedContent> {
+    let raw = std::fs::read_to_string(path)?;
+    let delimiter = if path.extension().and_then(|e| e.to_str()) == Some("tsv") {
+        '\t'
+    } else {
+        ','
+    };
+
+    let mut rows: Vec<Vec<String>> = Vec::new();
+    for line in raw.lines() {
+        let cols: Vec<String> = line.split(delimiter).map(|s| s.trim().to_string()).collect();
+        rows.push(cols);
+    }
+
+    let row_count = rows.len();
+    let col_count = rows.first().map(|r| r.len()).unwrap_or(0);
+    let headers = rows.first().cloned().unwrap_or_default();
+
+    // Convert to readable text for indexing
+    let text = rows
+        .iter()
+        .map(|row| row.join(" | "))
+        .collect::<Vec<_>>()
+        .join("\n");
+
+    let mut metadata = std::collections::HashMap::new();
+    metadata.insert("row_count".into(), row_count.to_string());
+    metadata.insert("col_count".into(), col_count.to_string());
+    metadata.insert("headers".into(), headers.join(", "));
+    metadata.insert("data_json".into(), serde_json::to_string(&rows).unwrap_or_default());
+
+    Ok(ExtractedContent {
+        source_path: path.to_string_lossy().to_string(),
+        text,
+        file_type: FileType::Csv,
+        metadata,
+    })
+}
+
 /// Dispatches extraction based on file type.
 pub fn extract_content(path: &Path) -> Result<ExtractedContent> {
     match detect_file_type(path) {
         FileType::Pdf => extract_pdf_text(path),
+        FileType::Csv => extract_csv(path),
         FileType::Image => extract_image_metadata(path),
         FileType::PlainText => extract_plain_text(path),
         FileType::Markdown => {
@@ -184,6 +227,26 @@ mod tests {
 
         let result = extract_content(&path);
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_detect_csv() {
+        assert_eq!(detect_file_type(Path::new("data.csv")), FileType::Csv);
+        assert_eq!(detect_file_type(Path::new("data.tsv")), FileType::Csv);
+    }
+
+    #[test]
+    fn test_extract_csv() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("test.csv");
+        std::fs::write(&path, "name,age,city\nAlice,30,Jakarta\nBob,25,Bandung").unwrap();
+
+        let content = extract_csv(&path).unwrap();
+        assert_eq!(content.file_type, FileType::Csv);
+        assert!(content.text.contains("Alice"));
+        assert_eq!(content.metadata["row_count"], "3");
+        assert_eq!(content.metadata["col_count"], "3");
+        assert!(content.metadata["headers"].contains("name"));
     }
 
     #[test]
