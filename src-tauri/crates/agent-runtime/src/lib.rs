@@ -11,6 +11,7 @@ pub mod heartbeat;
 pub mod orchestrator;
 pub mod registry;
 pub mod tasks;
+pub mod team_chat;
 pub mod tools;
 
 pub use agent::{Agent, AgentResponse, ToolExecutor};
@@ -21,6 +22,7 @@ pub use heartbeat::{AgentState, AgentStatusInfo, HeartbeatMonitor};
 pub use orchestrator::{AgentOrchestrator, DashboardData, TaskInfo};
 pub use registry::{AgentDef, AgentPersona, AgentRegistry, AgentRole, AgentSkill, OrgNode};
 pub use tasks::{Task, TaskQueue, TaskSchedule, TaskStatus};
+pub use team_chat::{Channel, ChatMessage, PendingResponse, Sender, TeamChat};
 pub use tools::get_tool_definitions;
 
 pub fn version() -> &'static str {
